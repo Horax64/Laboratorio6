@@ -5,9 +5,9 @@
 # Coeficientes encontrados a partir de ajustar las curvas de histérisis en x e y
 
 coeficientes_ajustados_pol4_x      = [-2.63871026e-09, -1.52030874e-06,  4.80642439e-04,  6.35644438e-02, -2.38560953e-02]
-coeficientes_cross_en_x          = [-0.00301124,  0.00139561]
+coeficientes_cross_en_x            = [-0.00301124,  0.00139561]
 coeficientes_ajustados_pol4_y      = [ 1.71210520e-08, -1.89181021e-06, -2.07786017e-04, -5.68752641e-02, 3.16507343e-02]
-coeficientes_cross_en_y        = [ 0.00475161, -0.06391525]
+coeficientes_cross_en_y            = [ 0.00475161, -0.06391525]
 
 # Modelo para la curva de histérisis en sentido ascendente de duty-cycle, para cada eje
 def pol4_x(dc):
@@ -42,7 +42,7 @@ def NewtonRaphsonIndividual(dc_x_guess, dc_y_guess, X, Y):
     
     """
     Si las posiciones físicas que se quieren setear son (X,Y) y los initial guesses para los 
-    duty-cycles correspondientes son (x0,y0), pedimos que:
+    duty-cycles correspondientes son (dc_x_guess,dc_y_guess), pedimos que:
 
     * pol4(x0) + lin(x0) = X
     * pol4(y0) + lin(y0) = y

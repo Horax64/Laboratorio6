@@ -1,5 +1,5 @@
 """
-@author: tomas
+@author: horax & fedex
 """
 from machine import Pin, PWM
 from time import sleep,time
@@ -9,34 +9,37 @@ import Newton_Raphson as NR
 max_duty = 2**16 - 1
 
 class Desplazador:
+
     """
     Clase para controlar un desplazador en 3 ejes (X, Y, Z) usando una ESP32.
     Permite generar PWM en los ejes, centrar posiciones, medir con contador
     de pulsos y realizar barridos automáticos en XY.
     """
 
-    def __init__(self, pin_x=33, pin_y=32, pin_z=25, pin_counter=27):
+    def __init__(self, pin_x=33, pin_y=32, pcentrar_z=25, pin_counter=27):
+
         """
         Inicializa el desplazador configurando los pines de PWM y el contador.
 
         Parámetros:
             pin_x (int): pin de salida PWM para el eje X.
             pin_y (int): pin de salida PWM para el eje Y.
-            pin_z (int): pin de salida PWM para el eje Z.
+            pcentrar_z (int): pin de salida PWM para el eje Z.
             pin_counter (int): pin de entrada para el contador de pulsos.
         """
         self.pwm_x = PWM(Pin(pin_x), freq=1221)
         self.pwm_y = PWM(Pin(pin_y), freq=1221)
-        self.pwm_z = PWM(Pin(pin_z), freq=1221)
+        self.pwm_z = PWM(Pin(pcentrar_z), freq=1221)
         self.counter = PCNT(0, pin=Pin(pin_counter), rising=PCNT.INCREMENT)   
 
-    def x(self, dc_x):
+    def configurar_dc_x(self, dc_x):
         """
         Configura el duty cycle del eje X.
 
         Parámetros:
             dc_x (int): valor del duty cycle a usar. 
-            """
+        """
+        
         if dc_x < 0:
             print('El valor del duty cycle debe ser positivo')
         if dc_x <= max_duty:
@@ -44,7 +47,7 @@ class Desplazador:
         else:
             print('El valor del duty cycle solicitado es mayor al máximo permitido')
             
-    def y(self, dc_y):
+    def configurar_dc_y(self, dc_y):
         """
         Configura el duty cycle del eje Y.
 
@@ -58,7 +61,7 @@ class Desplazador:
         else:
             print('El valor del duty cycle solicitado es mayor al máximo permitido')
             
-    def z(self, dc_z):
+    def configurar_dc_z(self, dc_z):
         """
         Configura el duty cycle del eje Z.
 
@@ -72,24 +75,25 @@ class Desplazador:
         else:
             print('El valor del duty cycle solicitado es mayor al máximo permitido')
         
-    def centro(self, in_z=True):
+    def centro(self, centrar_z=True):
         """
         Centra el desplazador en los ejes X e Y.
-        Si in_z=False, también centra el eje Z.
+        Si centrar_z=False, también centra el eje Z.
 
         Parámetros:
-            in_z (bool): si es True, centra los 3 ejes; por defecto solo X e Y.
+            centrar_z (bool): si es True, centra los 3 ejes; por defecto solo X e Y.
         """
-        if in_z:
-            self.x(.5)
-            self.y(.5)
-            self.z(.5)
+        if centrar_z:
+            self.configurar_dc_x(.5)
+            self.configurar_dc_y(.5)
+            self.configurar_dc_z(.5)
         else:
-            self.x(.5)
-            self.y(.5)
+            self.configurar_dc_x(.5)
+            self.configurar_dc_y(.5)
 
 
-    def medir(self, t_int, count):
+    def medir_pulsos(self, t_int, count):
+
         """
         Realiza una medición con el contador de pulsos.
 
@@ -100,6 +104,7 @@ class Desplazador:
         Nota:
             El contador se reinicia después de la medición.
         """
+
         sleep(.1)
         self.counter.start()
         sleep(t_int)
@@ -130,24 +135,29 @@ class Desplazador:
         
         print(f'Listo! Tardo {fin-inicio} s')
             
-        self.y(int(self.dcy[0]*max_duty))
+        self.configurar_dc_y(int(self.dcy[0]*max_duty))
         print(int(self.dcy[0]*max_duty))
         print(len(self.dcx))
         print(self.dcx)
         
         for i in range(0,len(self.dcx)):
             #print(self.dcx[i]*max_duty)
-            self.x(int(self.dcx[i]*max_duty))
+            self.configurar_dc_x(int(self.dcx[i]*max_duty))
             sleep(t_slp)
+
+    '''
+    Código nuevo de acá para abajo
+    '''
+
 
     def barrido_auxiliar(self, xlims, ylims, tslp):
         xs = range(xlims[0],xlims[1],100)
         ys = range(ylims[0],ylims[1],5)
         for dcy in ys:
-            self.x(0)
-            self.y(dcy)
+            self.configurar_dc_x(0)
+            self.configurar_dc_y(dcy)
             sleep(tslp)
             for dcx in xs:
-                self.x(dcx)
+                self.configurar_dc_x(dcx)
                 sleep(tslp)
         

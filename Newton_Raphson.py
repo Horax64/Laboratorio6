@@ -12,7 +12,7 @@ coeficientes_cross_en_y            = [ 0.00475161, -0.06391525]
 # Modelo para la curva de histérisis en sentido ascendente de duty-cycle, para cada eje
 def pol4_x(dc):
     coef_x = coeficientes_ajustados_pol4_x
-    return coef_x[0]*(x**4) + coef_x[1]*(x**3) + coef_x[2]*(x**2) + coef_x[3]*x + coef_x[4] 
+    return coef_x[0]*(dc**4) + coef_x[1]*(dc**3) + coef_x[2]*(dc**2) + coef_x[3]*dc + coef_x[4] 
 
 def pol4_y(dc):
     coef_y = coeficientes_ajustados_pol4_y

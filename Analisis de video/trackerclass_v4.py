@@ -106,7 +106,7 @@ class tracker:
         return template, obs
         
     @staticmethod
-    def corr(path, template, obs, centro, tiempo, duracion):
+    def corr(path, template, obs, centro, tiempo, duracion, canal):
         cap = cv.VideoCapture(path) 
         cap.set(cv.CAP_PROP_POS_FRAMES, duracion[0])   
         
@@ -126,13 +126,24 @@ class tracker:
         method = cv.TM_CCOEFF_NORMED # EFICIENCIA: Se define fuera del bucle
         
         while True:
-            ret, frame = cap.read()    
+            ret, frame = cap.read()
+            frame_idx += 1
+
             if not ret or frame_idx > (duracion[1] - duracion[0]):
                 break
+
+            if canal == 0: 
+                filt_frame = frame[:, :, 0]  # 0->azul
             
-            frame_idx += 1                      
-            gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)  
+            elif canal == 1:
+                filt_frame = frame[:, :, 1]  #1->verde
             
+            elif canal == 3:
+                filt_frame = frame[:, :, 1]  #2->rojo
+            
+            else:                      
+                filt_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY) #Sino hacemos un promedio  
+                
             # CORRELACIÓN CRUZADA (Usa FFT bajo el capó)
             result = cv.matchTemplate(A, template, method) 
             
@@ -173,17 +184,15 @@ class tracker:
             try:
                 upper_left_b = (upper_left[0] - d_w, upper_left[1] - d_h) 
                 bottom_right_b = (upper_left_b[0] + 2*w_v, upper_left_b[1] + 2*h_v)
-                A = gray[upper_left_b[1]:bottom_right_b[1], upper_left_b[0]:bottom_right_b[0]]                                
+                A = filt_frame[upper_left_b[1]:bottom_right_b[1], upper_left_b[0]:bottom_right_b[0]]                                
             except IndexError:
                 print(f"Área de observación fuera de los límites de la imagen en frame {frame_idx}")
                 break 
             
             x, y = int(upper_left[0]) + w_t, int(upper_left[1]) + h_t
-            x_vec.append(x)   
-            y_vec.append(y)   
             
             # VISUALIZACIÓN
-            img_disp = frame.copy()
+            img_disp = filt_frame.copy()
             bottom_right = (upper_left[0] + 2*w_t, upper_left[1] + 2*h_t) 
             cv.rectangle(img_disp, upper_left, bottom_right, [0,0,0], 2) 
             cv.rectangle(img_disp, upper_left_b, bottom_right_b, [0,0,255], 1)

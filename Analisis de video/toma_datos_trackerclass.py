@@ -6,8 +6,13 @@ import cv2 as cv
 import time
 
 # 1. Configuración de rutas y parámetros
-video_path = r'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\Barrido_ida_vuelta_x.mp4'  # Cambia esto por el nombre de tu archivo
-frame_inicial = 200            # Frame donde quieres empezar
+video_path = r'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\Discreto_ida_vuelta.mp4'  # Cambia esto por el nombre de tu archivo
+fps = tracker.fps(video_path)
+t_0 = 12 # Tiempo inicial en segundos
+frame_inicial = int(fps*t_0)            # Frame donde quieres empezar
+t_f = 220
+frame_final =  int(fps*t_f)
+
 ancho_busqueda = [50, 50]    # Tamaño del área roja (donde busca a la partícula)
 velocidad_visualizacion = 1  # ms entre frames (1 es lo más rápido)
 
@@ -19,16 +24,15 @@ centro, ancho_template = tracker.setTemplate(video_path, frame_inicial)
 template, obs = tracker.inicio(video_path, centro, ancho_template, ancho_busqueda, frame_inicial)
 
 # 4. Ejecución del trackeo
-# El segundo parámetro de 'duracion' es el frame final.
-duracion = [frame_inicial, 3000] 
-x_traj, _ = tracker.corr(video_path, template, obs, centro, velocidad_visualizacion, duracion)
+duracion = [frame_inicial, frame_final] 
+x_traj, y_traj = tracker.corr(video_path, template, obs, centro, velocidad_visualizacion, duracion, 0)
 
 # 5. Visualización de resultados con Matplotlib
 plt.figure(figsize=(8, 6))
-plt.plot(range(frame_inicial,5602+frame_inicial), x_traj, label='Trayectoria de la partícula')
+plt.plot(x_traj, y_traj, label='Trayectoria de la partícula')
 plt.gca().invert_yaxis() # Invertimos Y porque en imágenes el (0,0) es la esquina superior
-plt.xlabel("X (píxeles)")
-plt.ylabel("Y (píxeles)")
+plt.xlabel("X (pixeles)")
+plt.ylabel("Y (pixeles)")
 plt.title("Trayectoria recuperada")
 plt.legend()
 plt.show()

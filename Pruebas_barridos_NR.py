@@ -1,9 +1,7 @@
 """
 @author: tomas
 """
-from machine import Pin, PWM
 from time import sleep,time
-from esp32 import PCNT
 import Newton_Raphson as NR
 
 max_duty = 2**16 - 1
@@ -25,10 +23,6 @@ class Desplazador:
             pin_z (int): pin de salida PWM para el eje Z.
             pin_counter (int): pin de entrada para el contador de pulsos.
         """
-        self.pwm_x = PWM(Pin(pin_x), freq=1221)
-        self.pwm_y = PWM(Pin(pin_y), freq=1221)
-        self.pwm_z = PWM(Pin(pin_z), freq=1221)
-        self.counter = PCNT(0, pin=Pin(pin_counter), rising=PCNT.INCREMENT)   
 
     def x(self, dc_x):
         """
@@ -54,7 +48,7 @@ class Desplazador:
         if dc_y < 0:
             print('El valor del duty cycle debe ser positivo')
         if dc_y <= max_duty:
-            self.pwm_y.duty_u16(dc_y)
+            self.pwm_x.duty_u16(dc_y)
         else:
             print('El valor del duty cycle solicitado es mayor al máximo permitido')
             
@@ -117,24 +111,32 @@ class Desplazador:
         
         # NR.desplazamientos devuelve los Duty Cycles calculados por Newton-Raphson
         self.dcx, self.dcy, cant_pasos_x = NR.desplazamientos(*param)
-        cant_pasos_y = len(self.dcy)
-
-        t_inicio_barrido = time()
         print(self.dcx)
         print(self.dcy)
+        cant_pasos_y = len(self.dcy)
+
+        mediciones = []
+        t_inicio_barrido = time()
 
         try:
             for j in range(cant_pasos_y):
                 # 1. Posicionamiento en el eje Y (Fila actual)
                 val_y = int(self.dcy[j] * max_duty)
-                self.y(val_y)
+                
+                # 2. Retorno rápido al lateral derecho (Home de la fila)
+                # Aplicamos un tiempo de espera mayor aquí porque el salto es largo
+                val_x_inicio = int(self.dcx[0] * max_duty)
+                
+                print(f"Fila {j+1}/{cant_pasos_y} - Reposicionando en X_derecha...")
+                sleep(t_slp * 3) # Tiempo extra para amortiguar la inercia del salto largo
 
-                val_x = int(self.dcx[j] * max_duty)
-                self.x(val_x)
+                # 3. Barrido de la fila (Derecha a Izquierda)
+                for i, dc_val in enumerate(self.dcx):
+                    val_x = int(dc_val * max_duty)
                     
-                # Estabilización nanométrica
-                sleep(t_slp)
-                        
+                    # Estabilización nanométrica
+                    sleep(t_slp)
+                    
         except KeyboardInterrupt:
             print("\n[WARN] Barrido abortado. Compilando datos alcanzados...")
         
@@ -151,3 +153,6 @@ class Desplazador:
                 self.x(dcx)
                 sleep(tslp)
             i+=1
+
+d = Desplazador()
+d.barrer([0,0,65535,65535,1],0,2)

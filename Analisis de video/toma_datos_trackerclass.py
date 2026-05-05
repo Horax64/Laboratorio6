@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from trackerclass_v4 import tracker
 import matplotlib.pyplot as plt
-import numpy as np
+import pandas as pd
 import cv2 as cv
 import time
 
 # 1. Configuración de rutas y parámetros
-video_path = r'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\Discreto_ida_vuelta.mp4'  # Cambia esto por el nombre de tu archivo
+video_path = r'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\Discreto_ida_vuelta_x_2804.mp4'  # Cambia esto por el nombre de tu archivo
 fps = tracker.fps(video_path)
 t_0 = 12 # Tiempo inicial en segundos
 frame_inicial = int(fps*t_0)            # Frame donde quieres empezar
@@ -26,6 +26,10 @@ template, obs = tracker.inicio(video_path, centro, ancho_template, ancho_busqued
 # 4. Ejecución del trackeo
 duracion = [frame_inicial, frame_final] 
 x_traj, y_traj = tracker.corr(video_path, template, obs, centro, velocidad_visualizacion, duracion, 0)
+
+df_trayectoria = pd.DataFrame({'X': x_traj, 'Y': y_traj})
+df_trayectoria.to_csv('prueba.csv', index=False)  # Guardar la trayectoria en un archivo CSV
+
 
 # 5. Visualización de resultados con Matplotlib
 plt.figure(figsize=(8, 6))

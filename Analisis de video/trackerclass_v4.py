@@ -56,7 +56,7 @@ class tracker:
         return fps_val
 
     @staticmethod
-    def setTemplate(path, n0):
+    def setTemplate(path, n0, channel=0):
         # Permite al usuario seleccionar la partícula inicial de forma interactiva
         cap = cv.VideoCapture(path)
         cap.set(cv.CAP_PROP_POS_FRAMES, n0)
@@ -64,7 +64,18 @@ class tracker:
         cap.release()
 
         if ret:
-            frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            if channel == 0: 
+                frame = frame[:, :, 0]  # 0->azul
+            
+            elif channel == 1:
+                frame = frame[:, :, 1]  #1->verde
+            
+            elif channel == 2:
+                frame = frame[:, :, 2]  #2->rojo
+            
+            else:                      
+                frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY) #Sino hacemos un promedio
+           
             bbox = cv.selectROI("Seleccion de particula", frame)
             
             # Forzamos vaciado de la cola de eventos visuales para evitar crasheos
@@ -83,26 +94,28 @@ class tracker:
             raise Exception("No se encontró el video")
 
     @staticmethod
-    def inicio(path, centro, ancho_t, ancho_v, n0):
-        # Dibuja y recorta las matrices iniciales del Template y el Área de Búsqueda
+    def inicio(path, centro, ancho_t, ancho_v, n0, canal=0): # Añadimos canal
         cap = cv.VideoCapture(path)
         cap.set(cv.CAP_PROP_POS_FRAMES, n0)                                    
         ret, frame = cap.read()
         cap.release()
         
-        if not ret:
-            raise Exception("No se encontró el frame inicial.")
+        if not ret: raise Exception("No se encontró el frame inicial.")
             
-        imag = frame.copy()
-        cv.rectangle(imag, (centro[0]-ancho_t[0], centro[1]-ancho_t[1]), (centro[0]+ancho_t[0], centro[1]+ancho_t[1]), [0,0,0], 2) 
-        template = cv.cvtColor(frame[centro[1]-ancho_t[1]:centro[1]+ancho_t[1], centro[0]-ancho_t[0]:centro[0]+ancho_t[0]], cv.COLOR_BGR2GRAY)
+        # Seleccionamos el canal azul desde el inicio
+        if canal in [0, 1, 2]:
+            frame_proc = frame[:, :, canal]
+        else:
+            frame_proc = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+
+        y, x = centro[1], centro[0]
+        ht, wt = ancho_t[1], ancho_t[0]
+        hv, wv = ancho_v[1], ancho_v[0]
+
+        # Template y Obs deben venir del MISMO canal que usará corr()
+        template = frame_proc[y-ht:y+ht, x-wt:x+wt]
+        obs = frame_proc[y-hv:y+hv, x-wv:x+wv]
         
-        cv.rectangle(imag, (centro[0]-ancho_v[0], centro[1]-ancho_v[1]), (centro[0]+ancho_v[0], centro[1]+ancho_v[1]), [0,0,255], 1)
-        obs = cv.cvtColor(frame[centro[1]-ancho_v[1]:centro[1]+ancho_v[1], centro[0]-ancho_v[0]:centro[0]+ancho_v[0]], cv.COLOR_BGR2GRAY)
-        
-        cv.imshow("trackeo", imag)            
-        cv.waitKey(1000) # Muestra la configuración inicial 1 segundo
-        cv.destroyAllWindows()
         return template, obs
         
     @staticmethod
@@ -124,82 +137,81 @@ class tracker:
         
         A = obs.copy()        
         method = cv.TM_CCOEFF_NORMED # EFICIENCIA: Se define fuera del bucle
+       
+        # Parámetros de predicción
+        umbral_confianza = 0.65
+        memoria_velocidad = 5 # Cuántos frames usamos para calcular la inercia
+        vx, vy = 0, 0         # Componentes del vector de velocidad actual
         
         while True:
             ret, frame = cap.read()
+            if not ret or frame_idx > (duracion[1] - duracion[0]): break
             frame_idx += 1
+            
+            filt_frame = frame[:, :, canal]
+            
+            # 1. Aplicar predicción si ya tenemos datos previos
+            # Si el motor está en medio de un salto, esto "mueve" la caja proactivamente
+            if len(x_vec) > memoria_velocidad:
+                vx = x_vec[-1] - x_vec[-memoria_velocidad]
+                vy = y_vec[-1] - y_vec[-memoria_velocidad]
+                # Normalizamos la velocidad por frame
+                vx /= memoria_velocidad
+                vy /= memoria_velocidad
 
-            if not ret or frame_idx > (duracion[1] - duracion[0]):
-                break
+            # 2. Definir área de observación basada en la posición actual (x, y)
+            y_min, y_max = max(0, y - h_v), min(frame.shape[0], y + h_v)
+            x_min, x_max = max(0, x - w_v), min(frame.shape[1], x + w_v)
+            A = filt_frame[y_min:y_max, x_min:x_max]
 
-            if canal == 0: 
-                filt_frame = frame[:, :, 0]  # 0->azul
-            
-            elif canal == 1:
-                filt_frame = frame[:, :, 1]  #1->verde
-            
-            elif canal == 3:
-                filt_frame = frame[:, :, 1]  #2->rojo
-            
-            else:                      
-                filt_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY) #Sino hacemos un promedio  
-                
-            # CORRELACIÓN CRUZADA (Usa FFT bajo el capó)
-            result = cv.matchTemplate(A, template, method) 
-            
-            try:
-                # 1. Encontramos el máximo entero matricial [Fila, Columna] -> [Y, X]
-                maximos = peak_local_max(result, min_distance=5, threshold_rel=0.3)
-                max_loc_entero = max_cercano(maximos, max_loc) 
-                
-                # 2. Aplicamos la corrección matemática de sub-píxel
-                x_sub, y_sub = interpolacion_subpixel(result, max_loc_entero[0], max_loc_entero[1])                   
-                
-                # 3. CORRECCIÓN 1: Mantenemos el formato matricial [Y, X] para no cruzar ejes
-                max_loc = [int(round(y_sub)), int(round(x_sub))]
-                
-            except ValueError:
-                fallos += 1
-                if fallos > 5:
-                    print(f"Se detuvo el trackeo por pérdida de foco en frame {frame_idx}")
-                    break   
-                continue 
-                                    
-            # 4. ACTUALIZACIÓN DE COORDENADAS GLOBALES
-            # max_loc[1] es X_sub, max_loc[0] es Y_sub
-            upper_left = (max_loc[1] + x - w_v, max_loc[0] + y - h_v) 
-            
-            # Calculamos y guardamos la posición decimal súper precisa
-            x_real = (x_sub + x - w_v) + w_t
-            y_real = (y_sub + y - h_v) + h_t
-            
-            x_vec.append(x_real)   
-            y_vec.append(y_real)  
-            
-            # 5. CORRECCIÓN 2: Actualizamos el centro para el frame siguiente.
-            # Sin esto, la caja nunca sigue a la partícula.
-            x = int(upper_left[0]) + w_t
-            y = int(upper_left[1]) + h_t
-            
-            try:
-                upper_left_b = (upper_left[0] - d_w, upper_left[1] - d_h) 
-                bottom_right_b = (upper_left_b[0] + 2*w_v, upper_left_b[1] + 2*h_v)
-                A = filt_frame[upper_left_b[1]:bottom_right_b[1], upper_left_b[0]:bottom_right_b[0]]                                
-            except IndexError:
-                print(f"Área de observación fuera de los límites de la imagen en frame {frame_idx}")
-                break 
-            
-            x, y = int(upper_left[0]) + w_t, int(upper_left[1]) + h_t
-            
-            # VISUALIZACIÓN
-            img_disp = filt_frame.copy()
-            bottom_right = (upper_left[0] + 2*w_t, upper_left[1] + 2*h_t) 
-            cv.rectangle(img_disp, upper_left, bottom_right, [0,0,0], 2) 
-            cv.rectangle(img_disp, upper_left_b, bottom_right_b, [0,0,255], 1)
-            cv.imshow("trackeo", img_disp)
+            # 3. Correlación
+            res = cv.matchTemplate(A, template, cv.TM_CCOEFF_NORMED)
+            _, max_val, _, max_loc_raw = cv.minMaxLoc(res)
 
-            if cv.waitKey(tiempo) & 0xFF == ord("q"): 
-                break                    
+            if max_val > umbral_confianza:
+                # --- MODO TRACKING ACTIVO ---
+                estado = "TRACKING"
+                color_box = (0, 255, 0)
+                
+                x_sub, y_sub = interpolacion_subpixel(res, max_loc_raw[1], max_loc_raw[0])
+                x_real = x_min + x_sub + w_t
+                y_real = y_min + y_sub + h_t
+                
+                # Actualizamos x, y para el siguiente frame
+                x, y = int(x_real), int(y_real)
+            else:
+                # --- MODO PREDICCIÓN (EL SALTO) ---
+                estado = "PREDICCION POR INERCIA"
+                color_box = (255, 0, 255) # Magenta para indicar predicción
+                
+                # En lugar de quedarnos quietos, aplicamos la velocidad calculada
+                x_real = x_vec[-1] + vx
+                y_real = y_vec[-1] + vy
+                
+                # Desplazamos la ventana de búsqueda para el próximo frame
+                # Esto es lo que permite "encontrar" la partícula tras el salto
+                x, y = int(x_real), int(y_real)
+                print(f"Frame {frame_idx}: Salto detectado. Predicción: dx={vx:.2f}")
+
+            x_vec.append(x_real)
+            y_vec.append(y_real)
+
+            # --- VISUALIZACIÓN ---
+            img_disp = frame.copy()
+            # Dibujar ventana de búsqueda (cian)
+            cv.rectangle(img_disp, (x_min, y_min), (x_max, y_max), (255, 255, 0), 1)
+            # Dibujar partícula (Verde/Magenta)
+            cv.rectangle(img_disp, (int(x_real-w_t), int(y_real-h_t)), 
+                         (int(x_real+w_t), int(y_real+h_t)), color_box, 2)
+            
+            # Flecha de vector velocidad (para ver hacia dónde predice)
+            if estado == "TRACKING":
+                cv.arrowedLine(img_disp, (int(x_real), int(y_real)), 
+                               (int(x_real + vx*10), int(y_real + vy*10)), (255, 255, 0), 2)
+
+            cv.putText(img_disp, f"Estado: {estado}", (20, 30), 1, 1.2, color_box, 2)
+            cv.imshow("Tracker Predictivo - LEC", img_disp)
+            if cv.waitKey(tiempo) & 0xFF == ord("q"): break
         
         cap.release()
         cv.destroyAllWindows()

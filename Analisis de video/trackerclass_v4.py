@@ -119,29 +119,21 @@ class tracker:
         return template, obs
         
     @staticmethod
-    def corr(path, template, obs, centro, tiempo, duracion, canal):
+    def corr(path, template, obs, centro, tiempo, duracion, canal, limite_salto=70, max_predicciones=12):
         cap = cv.VideoCapture(path) 
         cap.set(cv.CAP_PROP_POS_FRAMES, duracion[0])   
         
-        # Condiciones geométricas iniciales
         h_t, w_t = [int(i/2) for i in template.shape]        
         h_v, w_v = [int(i/2) for i in obs.shape]      
-        d_h, d_w = h_v - h_t, w_v - w_t                    
         
         x, y = centro[0], centro[1]                     
-        max_loc = [w_v, h_v] # Centro local relativo al área de observación
-                
-        fallos = 0                   
         frame_idx = 0     
         x_vec, y_vec = [], []
         
-        A = obs.copy()        
-        method = cv.TM_CCOEFF_NORMED # EFICIENCIA: Se define fuera del bucle
-       
-        # Parámetros de predicción
+        vx, vy = 0, 0         
+        memoria_velocidad = 5 
         umbral_confianza = 0.65
-        memoria_velocidad = 5 # Cuántos frames usamos para calcular la inercia
-        vx, vy = 0, 0         # Componentes del vector de velocidad actual
+        fallos_consecutivos = 0  # Contador para registrar pérdidas de tracking
         
         while True:
             ret, frame = cap.read()
@@ -150,71 +142,73 @@ class tracker:
             
             filt_frame = frame[:, :, canal]
             
-            # 1. Aplicar predicción si ya tenemos datos previos
-            # Si el motor está en medio de un salto, esto "mueve" la caja proactivamente
             if len(x_vec) > memoria_velocidad:
                 vx = x_vec[-1] - x_vec[-memoria_velocidad]
                 vy = y_vec[-1] - y_vec[-memoria_velocidad]
-                # Normalizamos la velocidad por frame
                 vx /= memoria_velocidad
                 vy /= memoria_velocidad
 
-            # 2. Definir área de observación basada en la posición actual (x, y)
             y_min, y_max = max(0, y - h_v), min(frame.shape[0], y + h_v)
             x_min, x_max = max(0, x - w_v), min(frame.shape[1], x + w_v)
             A = filt_frame[y_min:y_max, x_min:x_max]
 
-            # 3. Correlación
             res = cv.matchTemplate(A, template, cv.TM_CCOEFF_NORMED)
             _, max_val, _, max_loc_raw = cv.minMaxLoc(res)
 
             if max_val > umbral_confianza:
-                # --- MODO TRACKING ACTIVO ---
                 estado = "TRACKING"
                 color_box = (0, 255, 0)
-                
                 x_sub, y_sub = interpolacion_subpixel(res, max_loc_raw[1], max_loc_raw[0])
                 x_real = x_min + x_sub + w_t
                 y_real = y_min + y_sub + h_t
-                
-                # Actualizamos x, y para el siguiente frame
                 x, y = int(x_real), int(y_real)
+                fallos_consecutivos = 0  # Reset si recuperamos la partícula
             else:
-                # --- MODO PREDICCIÓN (EL SALTO) ---
                 estado = "PREDICCION POR INERCIA"
-                color_box = (255, 0, 255) # Magenta para indicar predicción
-                
-                # En lugar de quedarnos quietos, aplicamos la velocidad calculada
-                x_real = x_vec[-1] + vx
-                y_real = y_vec[-1] + vy
-                
-                # Desplazamos la ventana de búsqueda para el próximo frame
-                # Esto es lo que permite "encontrar" la partícula tras el salto
+                color_box = (255, 0, 255) 
+                x_real = x_vec[-1] + vx if len(x_vec) > 0 else x
+                y_real = y_vec[-1] + vy if len(y_vec) > 0 else y
                 x, y = int(x_real), int(y_real)
-                print(f"Frame {frame_idx}: Salto detectado. Predicción: dx={vx:.2f}")
+                fallos_consecutivos += 1
+
+            # --- VALIDACIÓN DE SALTOS O PÉRDIDAS ---
+            # 1. Por distancia geométrica abrupta
+            if len(x_vec) > 0:
+                dist = np.hypot(x_real - x_vec[-1], y_real - y_vec[-1])
+                if dist > limite_salto and estado == "TRACKING":
+                    print(f"\n[!] Salto de posición detectado ({dist:.1f} px) en frame {duracion[0] + frame_idx}. Interrumpiendo...")
+                    cap.release()
+                    cv.destroyAllWindows()
+                    return x_vec, y_vec, duracion[0] + frame_idx, True
+
+            # 2. Por pérdida persistente (el tracker se quedó adivinando en el vacío)
+            if fallos_consecutivos > max_predicciones:
+                print(f"\n[!] Partícula perdida por {max_predicciones} frames seguidos. Posible salto de línea.")
+                cap.release()
+                cv.destroyAllWindows()
+                # Recortamos los últimos frames de predicción ciega para limpiar los datos
+                return x_vec[:-fallos_consecutivos], y_vec[:-fallos_consecutivos], duracion[0] + frame_idx - fallos_consecutivos, True
 
             x_vec.append(x_real)
             y_vec.append(y_real)
 
             # --- VISUALIZACIÓN ---
             img_disp = frame.copy()
-            # Dibujar ventana de búsqueda (cian)
             cv.rectangle(img_disp, (x_min, y_min), (x_max, y_max), (255, 255, 0), 1)
-            # Dibujar partícula (Verde/Magenta)
             cv.rectangle(img_disp, (int(x_real-w_t), int(y_real-h_t)), 
                          (int(x_real+w_t), int(y_real+h_t)), color_box, 2)
             
-            # Flecha de vector velocidad (para ver hacia dónde predice)
             if estado == "TRACKING":
                 cv.arrowedLine(img_disp, (int(x_real), int(y_real)), 
                                (int(x_real + vx*10), int(y_real + vy*10)), (255, 255, 0), 2)
 
             cv.putText(img_disp, f"Estado: {estado}", (20, 30), 1, 1.2, color_box, 2)
             cv.imshow("Tracker Predictivo - LEC", img_disp)
-            if cv.waitKey(tiempo) & 0xFF == ord("q"): break
+            if cv.waitKey(tiempo) & 0xFF == ord("q"): 
+                cap.release()
+                cv.destroyAllWindows()
+                return x_vec, y_vec, duracion[0] + frame_idx, False
         
         cap.release()
         cv.destroyAllWindows()
-        for _ in range(4): cv.waitKey(1) # Previene crasheo al finalizar
-                                    
-        return x_vec, y_vec
+        return x_vec, y_vec, duracion[0] + frame_idx, False

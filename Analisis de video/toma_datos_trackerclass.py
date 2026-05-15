@@ -4,55 +4,88 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import cv2 as cv
-import time
 
 # 1. Configuración de rutas y parámetros
 file_name = 'Barrido_continuo_1505_parte_2'
-video_path = rf'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\{file_name}.mp4'  # Cambia esto por el nombre de tu archivo
+video_path = rf'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\{file_name}.mp4'
 fps = tracker.fps(video_path)
 
-tiempos = np.arange(3,1507,47.06) # Tiempos en segundos donde se realizarán los trackeos
-tiempos = tiempos + 0.2
+# Extraemos el número total de frames del video para controlar el final real
+cap_temp = cv.VideoCapture(video_path)
+total_frames = int(cap_temp.get(cv.CAP_PROP_FRAME_COUNT))
+cap_temp.release()
 
-x_traj = []
-y_traj = []
+# Parámetros del experimento
+frame_actual = int(fps * 160) # Frame de inicio (equivalente a tus 3s + 0.2s de offset original)
+ancho_busqueda = [50, 50]    
+velocidad_visualizacion = 1  
 
-df_trayectoria = pd.DataFrame({'X': x_traj, 'Y': y_traj, 't_0_video' : []})
+df_trayectoria = pd.DataFrame()
 
-for tiempo in tiempos:
+print(f"Iniciando procesamiento continuo. Total de frames del video: {total_frames}")
+
+while frame_actual < total_frames:
     try:
-        t_0 = tiempo # Tiempo inicial en segundos
-        frame_inicial = int(fps*t_0)            # Frame donde quieres empezar
-        t_f = tiempo + 45
-        frame_final =  int(fps*t_f)
-
-        ancho_busqueda = [50, 50]    # Tamaño del área roja (donde busca a la partícula)
-        velocidad_visualizacion = 1  # ms entre frames (1 es lo más rápido)
-
-        # 2. Selección interactiva del Template (la partícula)
-        # Se abrirá una ventana, selecciona la partícula con el mouse y presiona ENTER o ESPACIO
-        centro, ancho_template = tracker.setTemplate(video_path, frame_inicial,0)
+        print(f"\n=======================================================")
+        print(f" Esperando ROI en Frame: {frame_actual} | Tiempo aproximado: {frame_actual/fps:.2f}s")
+        print(f"=======================================================")
+        
+        # 2. Selección interactiva del Template (se abrirá automáticamente tras cada salto detectado)
+        centro, ancho_template = tracker.setTemplate(video_path, frame_actual, 0)
 
         # 3. Inicialización de matrices
-        template, obs = tracker.inicio(video_path, centro, ancho_template, ancho_busqueda, frame_inicial, 0)
+        template, obs = tracker.inicio(video_path, centro, ancho_template, ancho_busqueda, frame_actual, 0)
 
-        # 4. Ejecución del trackeo
-        duracion = [frame_inicial, frame_final] 
-        x_traj, y_traj = tracker.corr(video_path, template, obs, centro, velocidad_visualizacion, duracion, 0)
-        tiempo_video = np.ones(len(x_traj))*tiempo  # Tiempo correspondiente a cada frame trackeado
-        df_trayectoria = pd.concat([df_trayectoria, pd.DataFrame({'X': x_traj, 'Y': y_traj, 't_0_video': tiempo_video})], ignore_index=True)
+        # 4. Ejecución del trackeo dinámico
+        duracion = [frame_actual, total_frames] 
+        
+        # Ajusta 'limite_salto' (píxeles) y 'max_predicciones' (frames perdidos) según la velocidad de tu setup
+        x_traj, y_traj, ultimo_frame, salto_detectado = tracker.corr(
+            video_path, template, obs, centro, velocidad_visualizacion, duracion, canal=0,
+            limite_salto=20, max_predicciones=3
+        )
+        
+        # Si se capturaron datos válidos en este tramo, los estructuramos
+        if len(x_traj) > 0:
+            frames_segmento = np.arange(frame_actual, frame_actual + len(x_traj))
+            tiempos_segmento = frames_segmento / fps
+            
+            df_segmento = pd.DataFrame({
+                'X': x_traj, 
+                'Y': y_traj, 
+                'Frame': frames_segmento,
+                'Tiempo_seg': tiempos_segmento
+            })
+            
+            df_trayectoria = pd.concat([df_trayectoria, df_segmento], ignore_index=True)
+            # Guardado preventivo por tramos (si se rompe el programa, conservas todo lo anterior)
+            df_trayectoria.to_csv(f'{file_name}.csv', index=False)  
 
-    except:
-        df_trayectoria.to_csv(f'{file_name}.csv', index=False)  # Guardar la trayectoria en un archivo CSV
+        if not salto_detectado:
+            print("\nSe ha alcanzado el final del video o el usuario canceló.")
+            break
+            
+        # El puntero avanza exactamente a donde el tracker detectó que inició el salto
+        frame_actual = ultimo_frame+10
+
+    except Exception as e:
+        print(f"\n[!] Interrupción en el procesamiento: {e}")
         break
-df_trayectoria.to_csv(f'{file_name}.csv', index=False)
 
-# 5. Visualización de resultados con Matplotlib
-plt.figure(figsize=(8, 6))
-plt.plot(x_traj, y_traj, label='Trayectoria de la partícula')
-plt.gca().invert_yaxis() # Invertimos Y porque en imágenes el (0,0) es la esquina superior
-plt.xlabel("X (pixeles)")
-plt.ylabel("Y (pixeles)")
-plt.title("Trayectoria recuperada")
-plt.legend()
-plt.show()
+# Finalizado el bucle, guardamos el dataframe global definitivo
+if not df_trayectoria.empty:
+    df_trayectoria.to_csv(f'{file_name}.csv', index=False)
+    print(f"\nProceso finalizado con éxito. Datos guardados en {file_name}.csv")
+
+    # 5. Visualización de resultados con Matplotlib (Muestra todo el barrido continuo concatenado)
+    plt.figure(figsize=(9, 7))
+    plt.plot(df_trayectoria['X'], df_trayectoria['Y'], label='Trayectoria global unificada', color='b', alpha=0.6)
+    plt.gca().invert_yaxis() 
+    plt.xlabel("X (píxeles)")
+    plt.ylabel("Y (píxeles)")
+    plt.title("Trayectoria completa recuperada (Multi-barrido)")
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.show()
+else:
+    print("\nNo se registraron datos en la trayectoria.")

@@ -7,12 +7,12 @@ import cv2 as cv
 import time
 
 # 1. Configuración de rutas y parámetros
-file_name = 'Discreto_xy_nocorrect_0805'
+file_name = 'Barrido_continuo_1505_parte_2'
 video_path = rf'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\{file_name}.mp4'  # Cambia esto por el nombre de tu archivo
 fps = tracker.fps(video_path)
 
-tiempos = np.array(range(0, 419, 22)) # Tiempos en segundos donde se realizarán los trackeos
-tiempos = tiempos + 0.5
+tiempos = np.arange(3,1507,47.06) # Tiempos en segundos donde se realizarán los trackeos
+tiempos = tiempos + 0.2
 
 x_traj = []
 y_traj = []
@@ -23,7 +23,7 @@ for tiempo in tiempos:
     try:
         t_0 = tiempo # Tiempo inicial en segundos
         frame_inicial = int(fps*t_0)            # Frame donde quieres empezar
-        t_f = tiempo + 20
+        t_f = tiempo + 45
         frame_final =  int(fps*t_f)
 
         ancho_busqueda = [50, 50]    # Tamaño del área roja (donde busca a la partícula)

@@ -7,24 +7,30 @@ import cv2 as cv
 import time
 
 # 1. Configuración de rutas y parámetros
-trayectorias_path = r'Analisis de video\Datos_tray\Barrido_continuo_1505_parte_2.csv'
+trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_1805.csv'
 data = pd.read_csv(trayectorias_path)
 
 plt.scatter(data['X'], data['Y'], s = 10)
 plt.show()
 
-cross = []
-y_0 = []
-for tiempos in data['t_0_video'].unique():
-    mask = data['t_0_video'] == tiempos
-    x_traj = data[mask]['X'].values
-    y_traj = data[mask]['Y'].values
-    x_traj = x_traj[0:590]
-    y_traj = y_traj[0:590]
-    y_0.append(y_traj[0])
-    coef, cov = np.polyfit(x_traj, y_traj, deg=1,cov=True)
-    print(coef[0], cov[0][0])
-    cross.append((coef[0],cov[0][0]))
+def distancia_euclidiana(p1, p2):
+    return np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
 
-plt.scatter(range(0,len(cross)), [c[0] for c in cross], label='Pendiente de la trayectoria')
-plt.show()
+saltos=[0]
+
+for i in range(1, len(data)-1):
+    p_anterior = (data['X'][i-1], data['Y'][i-1])
+    p_actual = (data['X'][i], data['Y'][i])
+    p_siguiente = (data['X'][i+1], data['Y'][i+1])
+    
+    d_anterior = distancia_euclidiana(p_anterior, p_actual)
+    d_siguiente = distancia_euclidiana(p_actual, p_siguiente)
+    
+    if d_anterior < 20 and d_siguiente > 20:  # Umbral de distancia para detectar saltos
+        saltos.append(i)
+        
+print(saltos)
+
+for i in range(len(saltos)-1):
+    plt.scatter(data['X'][saltos[i]:saltos[i+1]], data['Y'][saltos[i]:saltos[i+1]], s = 50, color='red')
+    plt.show()

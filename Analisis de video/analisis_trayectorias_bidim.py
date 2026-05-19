@@ -16,21 +16,53 @@ plt.show()
 def distancia_euclidiana(p1, p2):
     return np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
 
-saltos=[0]
+lineas_scanning = []
 
-for i in range(1, len(data)-1):
+i=1
+inicio = 0
+while i < len(data)-1:
     p_anterior = (data['X'][i-1], data['Y'][i-1])
     p_actual = (data['X'][i], data['Y'][i])
-    p_siguiente = (data['X'][i+1], data['Y'][i+1])
     
-    d_anterior = distancia_euclidiana(p_anterior, p_actual)
-    d_siguiente = distancia_euclidiana(p_actual, p_siguiente)
-    
-    if d_anterior < 20 and d_siguiente > 20:  # Umbral de distancia para detectar saltos
-        saltos.append(i)
-        
-print(saltos)
+    dist_y = np.abs(data['Y'][i]-data['Y'][i-1])
 
-for i in range(len(saltos)-1):
-    plt.scatter(data['X'][saltos[i]:saltos[i+1]], data['Y'][saltos[i]:saltos[i+1]], s = 50, color='red')
-    plt.show()
+    d_2_anterior = distancia_euclidiana(p_anterior, p_actual)
+    
+    if d_2_anterior >= 14 or dist_y >= 4:  # Umbral de distancia para detectar saltos
+        fin = i-1
+        lineas_scanning.append([inicio,fin])
+        i+=1
+        while distancia_euclidiana(p_anterior, p_actual) > 5 and dist_y > 3:
+            p_anterior = (data['X'][i-1], data['Y'][i-1])
+            p_actual = (data['X'][i], data['Y'][i])
+            i+=1
+
+        inicio = i
+    
+    i+=1
+    
+# Al salir del while, verificamos si quedó un último cluster abierto sin registrar
+if inicio < len(data):
+    lineas_scanning.append([inicio, len(data) - 1])
+
+print("Lineas de scanning detectadas:", lineas_scanning)
+
+# 1. Inicializamos un array del tamaño exacto del DataFrame, lleno de -1 (saltos)
+tiempos_corte = np.ones(len(data)) * -1
+
+# 2. Iteramos sobre los rangos y "pintamos" el tiempo correspondiente
+for id0, id1 in lineas_scanning:
+    tiempo_0 = data['Tiempo_seg'].iloc[id0]
+    
+    # Asignamos tiempo_0 desde id0 hasta id1 (usamos +1 porque el límite superior es exclusivo en Python)
+    tiempos_corte[id0:id1+1] = tiempo_0
+
+# 3. Lo agregamos directamente como columna al DataFrame
+data['Tiempos_corte'] = tiempos_corte
+
+
+file_name = 'Prueba_separación_automática'
+data.to_csv(f'{file_name}.csv', index=False)  
+
+print(f'Largo de data: {len(data)}')
+print(f'Largo de tiempos_corte: {len(data["Tiempos_corte"])}')

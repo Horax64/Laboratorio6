@@ -14,11 +14,12 @@ fps = tracker.fps(video_path)
 cap_temp = cv.VideoCapture(video_path)
 total_frames = int(cap_temp.get(cv.CAP_PROP_FRAME_COUNT))
 cap_temp.release()
+t_inicio = 0
 
 # Parámetros del experimento
-frame_actual = int(fps * 160) # Frame de inicio (equivalente a tus 3s + 0.2s de offset original)
+frame_actual = int(fps * t_inicio) 
 ancho_busqueda = [50, 50]    
-velocidad_visualizacion = 1  
+velocidad_visualizacion = 10  
 
 df_trayectoria = pd.DataFrame()
 

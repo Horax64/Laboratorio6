@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd 
 
 # 1. Configuración de rutas y parámetros
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_xy_nocorrect_0805.csv'
+trayectorias_path = r'Prueba_separación_automática.csv'
 data = pd.read_csv(trayectorias_path)
 tiempos = data['t_0_video'].unique()
 
@@ -22,8 +22,6 @@ def lineal(x,a,b):
 
 pendientes = []
 ordenadas = []
-
-
 
 # Sección cross-talk entre ejes
 

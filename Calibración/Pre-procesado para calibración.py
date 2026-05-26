@@ -3,13 +3,11 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import pandas as pd 
 
-trayectorias_path = r'Prueba_separación_automática.csv'
+trayectorias_path = r'Analisis de video\Datos_tray\Prueba_separación_automática.csv'
 data = pd.read_csv(trayectorias_path)
 tiempos = [tiempo for tiempo in data['t_0_video'].unique() if tiempo >= 0]
 
 # Recosntruimos y limpiamos las trayectorias de forma adecuada
-tiempos_a_corregir = []
-
 for tiempo in tiempos:
     mask = data['t_0_video'] == tiempo
     x_traj = data[mask]['X'].values
@@ -20,6 +18,9 @@ for tiempo in tiempos:
     plt.title(f'Chequeo general')
 plt.show()
 
+
+tiempos_a_corregir = []
+tiempos_reales = []
 for i,tiempo in enumerate(tiempos):
     mask = data['t_0_video'] == tiempo
     x_traj = data[mask]['X'].values
@@ -53,7 +54,23 @@ for i,tiempo in enumerate(tiempos):
                 # plt.show()
 
                 tiempos_a_corregir.append(tiempos[i+1])
+                tiempos_reales.append(tiempos[i])
         except:
             print('Ultima fila')
 
 print(tiempos_a_corregir)
+print(tiempos_reales)
+
+
+#Reemplazamos con las correcciones hechas y vemos si hay que rectificar
+data = data.replace({tiempos_a_corregir[i]:tiempos_reales[i] for i in range(len(tiempos_reales))})
+
+for tiempo in tiempos:
+    mask = data['t_0_video'] == tiempo
+    x_traj = data[mask]['X'].values
+    y_traj = data[mask]['Y'].values
+    plt.scatter(x_traj,y_traj)
+    plt.xlabel('x [px]')
+    plt.ylabel('y [px]')
+    plt.title(f'Graficos post-correcciones')
+plt.show()

@@ -7,7 +7,7 @@ import cv2 as cv
 import time
 
 # 1. Configuración de rutas y parámetros
-trayectorias_path = r'Laboratorio6\Analisis de video\Datos_tray\Discreto_x_1805.csv'
+trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_1805.csv'
 data = pd.read_csv(trayectorias_path)
 
 plt.scatter(data['X'], data['Y'], s = 10)
@@ -52,7 +52,7 @@ tiempos_corte = np.ones(len(data)) * -1
 
 # 2. Iteramos sobre los rangos y "pintamos" el tiempo correspondiente
 for id0, id1 in lineas_scanning:
-    tiempo_0 = data['Tiempo_seg'].iloc[id0]
+    tiempo_0 = data['t_0_video'].iloc[id0]
     
     # Asignamos tiempo_0 desde id0 hasta id1 (usamos +1 porque el límite superior es exclusivo en Python)
     tiempos_corte[id0:id1+1] = tiempo_0
@@ -61,7 +61,7 @@ for id0, id1 in lineas_scanning:
 data['Tiempos_corte'] = tiempos_corte
 
 
-file_name = 'Prueba_separación_automática'
+file_name = r'Analisis de video\Datos_tray\Prueba_separación_automática'
 data.to_csv(f'{file_name}.csv', index=False)  
 
 print(f'Largo de data: {len(data)}')

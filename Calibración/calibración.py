@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd 
 
 # 1. Configuración de rutas y parámetros
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_1805_proc.csv'
+trayectorias_path = r'Analisis de video\Datos_tray\Discreto_y_2605.csv'
 data = pd.read_csv(trayectorias_path)
 filas = data['fila'].unique()
 

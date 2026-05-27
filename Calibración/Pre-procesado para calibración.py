@@ -3,7 +3,7 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import pandas as pd 
 
-trayectorias_path = r'Analisis de video\Datos_tray\Prueba_separación_automática.csv'
+trayectorias_path = r'Analisis de video\Datos_tray\Discreto_y_2705_v2.csv'
 data = pd.read_csv(trayectorias_path)
 tiempos = [tiempo for tiempo in data['t_0_video'].unique() if tiempo >= 0]
 

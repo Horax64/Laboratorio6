@@ -119,19 +119,19 @@ x_mean = x_mean*0.025239
 # plt.grid(True)
 # plt.show()
 
-for fila in filas:
-    x_track = data[data['fila']==fila]['X']
-    y_track = data[data['fila']==fila]['Y']
 
-    umbral_x = 1  # Ajustá esto según el "paso" en micrómetros o píxeles de tu barrido
+x_track = data[data['fila']==0]['X']
+y_track = data[data['fila']==0]['Y']
 
-    x_mean, y_mean, x_std, y_std = promediar_clusters_corregido(x_track, y_track, umbral_x)
-    
-    plt.scatter(range(0,len(x_mean)-1),np.diff(x_mean))
-    plt.title('Saltos en posición en función del dc')
-    plt.xlabel('Duty cycle')
-    plt.ylabel('\Delta x[um]')  
-    plt.gca().invert_yaxis()
-    plt.grid(True)
+umbral_x = 1  # Ajustá esto según el "paso" en micrómetros o píxeles de tu barrido
+
+x_mean, y_mean, x_std, y_std = promediar_clusters_corregido(x_track, y_track, umbral_x)
+
+plt.scatter(range(0,len(x_mean)),x_mean)
+plt.title('Saltos en posición en función del dc')
+plt.xlabel('Duty cycle')
+plt.ylabel('\Delta x[um]')  
+plt.gca().invert_yaxis()
+plt.grid(True)
 plt.show()
 

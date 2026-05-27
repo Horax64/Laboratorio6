@@ -6,7 +6,7 @@ import pandas as pd
 import cv2 as cv
 
 # 1. Configuración de rutas y parámetros
-file_name = 'Discreto_x_2605'
+file_name = 'Discreto_y_2705_v2'
 video_path = rf'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\{file_name}.mp4'
 fps = tracker.fps(video_path)
 

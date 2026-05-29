@@ -2,6 +2,7 @@
 @author: Horax & Fedex
 """
 
+#%%
 import pandas as pd 
 import numpy as np
 
@@ -42,7 +43,7 @@ def NR_1paso_x(dc_x0,X):
 
 
 def NR_1paso_y(dc_y0,X,Y):
-    F_y = polinomio_y(dc_y0) + cross_x(X)- Y
+    F_y = polinomio_y(dc_y0) + cross_x(X) - Y
     return dc_y0 - F_y/d_polinomio_y(dc_y0)
 
 # Newton-Raphson en n iteraciones
@@ -84,3 +85,23 @@ def dc_scanning(paso_x,paso_y):
 
     return dcs_x, dcs_y
 
+dcs_x = []
+
+dcsx_0,dcsy_0 = dc_scanning(0.05,0.05)
+
+#print(np.array(dcsy_0).reshape(20,20).T.reshape(1,400))
+
+#%%
+dcs_y = np.array(dcsy_0).reshape(20,20).T.reshape(1,400)
+print(dcs_y[0])
+
+for _ in range(0,20):
+    dcs_x.extend(dcsx_0)
+
+print(len(dcs_x),len(dcs_y))
+
+dutys_csv = pd.DataFrame({'Dcx': dcs_x,'Dcy':dcs_y[0]})
+
+dutys_csv.to_csv(r'dutys_csv.csv')
+
+# %%

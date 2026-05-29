@@ -1,21 +1,24 @@
+#%%
 import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import pandas as pd 
 
 # 1. Configuración de rutas y parámetros
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_y_2705_v2_proc.csv'
+trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_2905_correcciones_proc.csv'
 data = pd.read_csv(trayectorias_path)
 filas = data['fila'].unique()
 
-x_1 = data[data['fila']==filas[1]]['X']
-y_1 = data[data['fila']==filas[1]]['Y']
+x_1 = data[data['fila']==filas[3]]['X']
+y_1 = data[data['fila']==filas[3]]['Y']
 
-# plt.scatter(x_1,y_1)
-# plt.xlabel('x [px]')
-# plt.ylabel('y [px]')
-# plt.title('Barrido cross-talk discreto (primera fila)')
-# plt.show()
+plt.scatter(x_1,y_1)
+plt.xlabel('x [px]')
+plt.ylabel('y [px]')
+plt.title('Barrido cross-talk discreto (primera fila)')
+plt.show()
+
+#%%
 
 def lineal(x,a,b):
     return a*x + b
@@ -41,8 +44,10 @@ print(ordenada_promedio)
 
 
 
-# plt.hist(pendientes)
-#plt.show()
+plt.hist(pendientes)
+plt.show()
+
+#%%
 
 # Código para promediar los clusters obtenidos en el barrido discreto 
 
@@ -56,7 +61,7 @@ def promediar_clusters_corregido(x_data, y_data, umbral_x):
     
     # 1. Calculamos la derivada discreta frame a frame.
     # Le ponemos np.abs() para que detecte saltos tanto en la ida como en la vuelta del barrido.
-    dx_frame = np.abs(np.diff(y))
+    dx_frame = np.abs(np.diff(x))
     
     # 2. El salto físico real de un duty cycle a otro será mucho mayor que 
     # el ruido de trackeo entre dos frames del mismo clúster estacionario.
@@ -77,11 +82,55 @@ def promediar_clusters_corregido(x_data, y_data, umbral_x):
     y_err = np.array([np.std(c) for c in clusters_y if len(c) > min_frames_por_paso])
     
     # Imprimimos diagnóstico rápido para que veas qué hizo
-    print(f"Detectados {len(y_promedios)} clústers (pasos) válidos.")
+    print(f"Detectados {len(x_promedios)} clústers (pasos) válidos.")
     
     return x_promedios, y_promedios, x_err, y_err
 
 ajustes_nolineal_y = []
+for fila in filas:
+    try:
+        x_track = data[data['fila']==fila]['X']
+        y_track = data[data['fila']==fila]['Y']
+
+        print(x_track)
+
+        umbral_x = 1  # Ajustá esto según el "paso" en micrómetros o píxeles de tu barrido
+
+        x_mean, y_mean, x_std, y_std = promediar_clusters_corregido(x_track, y_track, umbral_x)
+
+        print(len(x_mean))
+
+        # Visualización rápida para ver que haya quedado joya
+        # plt.figure(figsize=(8, 6))
+        # plt.scatter(x_track, y_track, color='gray', alpha=0.3, label='Tracking crudo')
+        # plt.errorbar(x_mean, y_mean, xerr=x_std, yerr=y_std, fmt='ro', 
+        #             capsize=3, label='Centroides (promedio)')
+        # plt.xlabel('Desplazamiento X')
+        # plt.ylabel('Desplazamiento Y')
+        # plt.title(f'Promediado de Clústers de Tracking {fila}')
+        # plt.legend()
+        # plt.grid(True)
+        # plt.show()
+
+        dc_x = np.linspace(0,1,20)
+        # Calibración de distancia
+
+        coef = np.polyfit(dc_x,x_mean,3)
+        def pol(x,c,d,e,f):
+            return  c*x**3 + d*x**2 + e*x + f
+
+        #plt.plot(dc_x,pol(dc_x,*coef),'r',label='Ajuste polinomio grado 4')
+        plt.scatter(dc_x[1:-3],-np.diff(x_mean)[0:-3])
+        plt.title('Histéresis de ida en x')
+        plt.xlabel('Duty cycle')
+        plt.ylabel('x[um]')
+        plt.gca().invert_yaxis()
+        plt.grid(True)
+    except:
+        1   
+plt.show()
+
+#%%
 
 for i,fila in enumerate(filas):
 
@@ -173,3 +222,5 @@ ordenada_promedio_cross_y = 1485.4739436704124
 
 
 
+
+# %%

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd 
 
 #%%
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_y_2705_v2.csv'
+trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_2905_correcciones.csv'
 data = pd.read_csv(trayectorias_path)
 dc_y = range(0,65535,3276)
 dc_x = range(0,65535,3276)
@@ -18,7 +18,7 @@ num_fila = []
 while i < len(data)-1:
     fila = idx_saltos_de_fila[-1]
     num_fila.append(fila)
-    if np.abs(data['Y'][i+1]-data['Y'][i]) > 50: #Definimos la diferencia máxima entre el elemento actual y el próximo a ser considerada como salto
+    if np.abs(data['X'][i+1]-data['X'][i]) > 50: #Definimos la diferencia máxima entre el elemento actual y el próximo a ser considerada como salto
         idx_saltos_de_fila.append(i)
     i+=1
 fila = idx_saltos_de_fila[-1]
@@ -79,6 +79,6 @@ for fila in filas:
 plt.show()
 #%%
 #Por ahora parece estar funcionando de forma más que adecuada, vamos a guardar los datos
-file_name = r'Analisis de video\Datos_tray\Discreto_y_2705_v2_proc'
+file_name = r'Analisis de video\Datos_tray\Discreto_x_2905_correcciones_proc'
 data.to_csv(f'{file_name}.csv', index=False)  
 # %%

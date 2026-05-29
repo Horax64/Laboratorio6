@@ -6,7 +6,7 @@ import pandas as pd
 import cv2 as cv
 
 # 1. Configuración de rutas y parámetros
-file_name = 'Discreto_y_2705_v2'
+file_name = 'Discreto_x_2905_correcciones'
 video_path = rf'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\{file_name}.mp4'
 fps = tracker.fps(video_path)
 
@@ -14,7 +14,7 @@ fps = tracker.fps(video_path)
 cap_temp = cv.VideoCapture(video_path)
 total_frames = int(cap_temp.get(cv.CAP_PROP_FRAME_COUNT))
 cap_temp.release()
-t_inicio = 1.5
+t_inicio = 0
 
 # Parámetros del experimento
 frame_actual = int(fps * t_inicio) 

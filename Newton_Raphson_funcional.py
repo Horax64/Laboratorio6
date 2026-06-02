@@ -24,7 +24,7 @@ coefs_y[-1] = 0
 
 
 cross_x = np.poly1d(promedio_cross_x)
-cross_y = np.poly1d(promedio_cross_x)
+cross_y = np.poly1d(promedio_cross_y)
 
 
 polinomio_x = np.poly1d(coefs_x)
@@ -98,10 +98,15 @@ print(dcs_y[0])
 for _ in range(0,20):
     dcs_x.extend(dcsx_0)
 
-print(len(dcs_x),len(dcs_y))
+paso_y = 0.05
+salto_x = cross_y(polinomio_y(paso_y))/65535
+for i in range(0,len(dcs_x)):
+    n = i%20
+    dcs_x = dcs_x - n*salto_x
+
 
 dutys_csv = pd.DataFrame({'Dcx': dcs_x,'Dcy':dcs_y[0]})
 
-dutys_csv.to_csv(r'dutys_csv.csv')
+dutys_csv.to_csv(r'dutys_v2_csv.csv')
 
 # %%

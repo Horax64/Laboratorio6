@@ -6,7 +6,7 @@ import pandas as pd
 import cv2 as cv
 
 # 1. Configuración de rutas y parámetros
-file_name = 'Discreto_x_2905_correcciones'
+file_name = 'Discreto_x_0206'
 video_path = rf'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\{file_name}.mp4'
 fps = tracker.fps(video_path)
 
@@ -19,7 +19,7 @@ t_inicio = 0
 # Parámetros del experimento
 frame_actual = int(fps * t_inicio) 
 ancho_busqueda = [50, 50]    
-velocidad_visualizacion = 10  
+velocidad_visualizacion = 1  
 
 df_trayectoria = pd.DataFrame()
 

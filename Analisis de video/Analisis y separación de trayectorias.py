@@ -7,7 +7,7 @@ import cv2 as cv
 import time
 
 # 1. Configuración de rutas y parámetros
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_1805.csv'
+trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_2905_correcciones_proc.csv'
 data = pd.read_csv(trayectorias_path)
 
 plt.scatter(data['X'], data['Y'], s = 10)

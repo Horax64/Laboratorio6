@@ -4,8 +4,9 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import pandas as pd 
 
+#%%
 # 1. Configuración de rutas y parámetros
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_2905_correcciones_proc.csv'
+trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_0206.csv'
 data = pd.read_csv(trayectorias_path)
 filas = data['fila'].unique()
 

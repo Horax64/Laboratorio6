@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd 
 
 #%%
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_0506.csv'
+trayectorias_path = r'C:\Users\LEC\Desktop\Laboratorio6\Analisis de video\Datos_tray\Discreto_x_0506_v2.csv'
 data = pd.read_csv(trayectorias_path)
 dc_y = range(0,65535,3276)
 dc_x = range(0,65535,3276)
@@ -61,24 +61,23 @@ for fila in filas:
     plt.title(f'Chequeo general, filtrado outliers')
 plt.show()
 #%%
-#Filtro para el caso del barrido en y, las posiciones donde el tracker (y el Nano) se rompió
-mask = data['fila'] == filas[5]
-y_traj = data[mask]['Y'].values
-plt.scatter(range(0,285,1),y_traj[0:285])
-plt.show()
+## Filtro para el caso del barrido en y, las posiciones donde el tracker (y el Nano) se rompió
+# mask = data['fila'] == filas[5]
+# y_traj = data[mask]['Y'].values
+# plt.scatter(range(0,285,1),y_traj[0:285])
+# plt.show()
 
-data = data.drop(index = data[mask][285::].index)
-for fila in filas:
-    mask = data['fila'] == fila
-    x_traj = data[mask]['X'].values
-    y_traj = data[mask]['Y'].values
-    plt.scatter(x_traj,y_traj)
-    plt.xlabel('x [px]')
-    plt.ylabel('y [px]')
-    plt.title(f'Chequeo general, filtrado outliers')
-plt.show()
+# data = data.drop(index = data[mask][285::].index)
+# for fila in filas:
+#     mask = data['fila'] == fila
+#     x_traj = data[mask]['X'].values
+#     y_traj = data[mask]['Y'].values
+#     plt.scatter(x_traj,y_traj)
+#     plt.xlabel('x [px]')
+#     plt.ylabel('y [px]')
+#     plt.title(f'Chequeo general, filtrado outliers')
+# plt.show()
 #%%
 #Por ahora parece estar funcionando de forma más que adecuada, vamos a guardar los datos
-file_name = r'Analisis de video\Datos_tray\Discreto_x_2905_correcciones_proc'
-data.to_csv(f'{file_name}.csv', index=False)  
-# %%
+#file_name = r'Analisis de video\Datos_tray\Discreto_x_2905_correcciones_proc'
+#data.to_csv(f'{file_name}.csv', index=False)  

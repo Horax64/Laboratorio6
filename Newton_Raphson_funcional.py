@@ -9,8 +9,8 @@ import numpy as np
 promedio_cross_x = [-0.03461811951503092,0]
 promedio_cross_y = [-0.07531236878047691,0]
 
-datos_ajuste_x = pd.read_csv('ajuste_cubico_x.csv') 
-datos_ajuste_y= pd.read_csv('ajuste_cubico_y.csv')
+datos_ajuste_x = pd.read_csv('\ajuste_cubico_x.csv') 
+datos_ajuste_y= pd.read_csv('\ajuste_cubico_y.csv')
 
 promedio_x = datos_ajuste_x.mean()[1::]
 coefs_x = [coef for coef in promedio_x] 
@@ -28,6 +28,8 @@ cross_y = np.poly1d(promedio_cross_x)
 
 polinomio_x = np.poly1d(coefs_x)
 polinomio_y = np.poly1d(coefs_y)
+
+print(polinomio_x)
 
 d_polinomio_x = np.polyder(polinomio_x)
 d_polinomio_y = np.polyder(polinomio_y)

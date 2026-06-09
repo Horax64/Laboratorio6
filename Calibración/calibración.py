@@ -1,31 +1,39 @@
+"""
+Método de calibración de parámetros pensado para usar el último script de calculo dcs
+"""
 #%%
 import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import pandas as pd 
 
-# 1. Configuración de rutas y parámetros
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_2905_correcciones_proc.csv'
+#%%
+"""Configuración de rutas y visualización de una fila"""
+
+trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_1805_proc.csv'
 data = pd.read_csv(trayectorias_path)
 filas = data['fila'].unique()
+fila = 3
 
-x_1 = data[data['fila']==filas[3]]['X']
-y_1 = data[data['fila']==filas[3]]['Y']
+x_1 = data[data['fila']==filas[fila]]['X']
+y_1 = data[data['fila']==filas[fila]]['Y']
 
 plt.scatter(x_1,y_1)
 plt.xlabel('x [px]')
 plt.ylabel('y [px]')
-plt.title('Barrido cross-talk discreto (primera fila)')
+plt.title(f'Barrido cross-talk discreto (fila {fila})')
 plt.show()
 
 #%%
+"""
+Ajuste de cross-talk entre ejes
+Tomamos un modelo lineal y encontramos Y = m*X
+"""
 
 def lineal(x,a,b):
     return a*x + b
 pendientes = []
 ordenadas = []
-
-# Sección cross-talk entre ejes
 
 for fila in filas:
     mask = data['fila'] == fila
@@ -46,7 +54,10 @@ plt.hist(pendientes)
 plt.show()
 
 #%%
-
+"""
+Ajuste de las no linealidades del barrido de x.
+Vamos a ajustar (X_real = f(dc_x)).
+"""
 # Código para promediar los clusters obtenidos en el barrido discreto 
 
 def promediar_clusters_corregido(x_data, y_data, umbral_x):
@@ -70,7 +81,6 @@ def promediar_clusters_corregido(x_data, y_data, umbral_x):
     clusters_y = np.split(y, indices_corte)
     
     # 4. Filtro de robustez: ignoramos "clústers" que tengan muy pocos puntos
-    # (ej. si el tracker se perdió durante 2 frames y volvió, eso no es un step del piezo)
     min_frames_por_paso = 5 
     
     x_promedios = np.array([np.mean(c) for c in clusters_x if len(c) > min_frames_por_paso])
@@ -85,6 +95,10 @@ def promediar_clusters_corregido(x_data, y_data, umbral_x):
     return x_promedios, y_promedios, x_err, y_err
 
 ajustes_nolineal_y = []
+
+#%%
+
+
 for fila in filas:
     try:
         x_track = data[data['fila']==fila]['X']
@@ -92,13 +106,13 @@ for fila in filas:
 
         print(x_track)
 
-        umbral_x = 1  # Ajustá esto según el "paso" en micrómetros o píxeles de tu barrido
+        umbral_x = 1  # Umbral en pixeles para separar clusters (mucho mayor al "ruido" del tracker)
 
         x_mean, y_mean, x_std, y_std = promediar_clusters_corregido(x_track, y_track, umbral_x)
 
         print(len(x_mean))
 
-        # Visualización rápida para ver que haya quedado joya
+        # # Visualización rápida para ver que haya quedado joya
         # plt.figure(figsize=(8, 6))
         # plt.scatter(x_track, y_track, color='gray', alpha=0.3, label='Tracking crudo')
         # plt.errorbar(x_mean, y_mean, xerr=x_std, yerr=y_std, fmt='ro', 
@@ -117,7 +131,7 @@ for fila in filas:
         def pol(x,c,d,e,f):
             return  c*x**3 + d*x**2 + e*x + f
 
-        #plt.plot(dc_x,pol(dc_x,*coef),'r',label='Ajuste polinomio grado 4')
+        # plt.plot(dc_x,pol(dc_x,*coef),'r',label='Ajuste polinomio grado 4')
         # plt.scatter(dc_x[1:-3],-np.diff(x_mean)[0:-3])
         # plt.title('Histéresis de ida en x')
         # plt.xlabel('Duty cycle')
@@ -129,30 +143,29 @@ for fila in filas:
 plt.show()
 
 #%%
+cantidad_dcs = 21 #Es necesario tener en claro cuales fueron los dcs para cada punto.
+                  #Asumimos que mandamos un array equiespaciado
 
 for i,fila in enumerate(filas):
+    x_track = data[data['fila']==fila]['X']
+    y_track = data[data['fila']==fila]['Y']
 
-    if i not in [0]:
-        x_track = data[data['fila']==fila]['X']
-        y_track = data[data['fila']==fila]['Y']
+    umbral_x = 1  # Ajustá esto según el "paso" en micrómetros o píxeles de tu barrido
 
-        umbral_x = 1  # Ajustá esto según el "paso" en micrómetros o píxeles de tu barrido
+    x_mean, y_mean, x_std, y_std = promediar_clusters_corregido(x_track, y_track, umbral_x)
 
-        x_mean, y_mean, x_std, y_std = promediar_clusters_corregido(x_track, y_track, umbral_x)
-
-        print(len(x_mean))
-
-        #Visualización rápida para ver que haya quedado joya
-        plt.figure(figsize=(8, 6))
-        plt.scatter(x_track, y_track, color='gray', alpha=0.3, label='Tracking crudo')
-        plt.errorbar(x_mean, y_mean, xerr=x_std, yerr=y_std, fmt='ro', 
-                    capsize=3, label='Centroides (promedio)')
-        plt.xlabel('Desplazamiento X')
-        plt.ylabel('Desplazamiento Y')
-        plt.title(f'Promediado de Clústers de Tracking {i}')
-        plt.legend()
-        plt.grid(True)
-        plt.show()
+    if len(x_mean) == cantidad_dcs:
+        # #Visualización rápida para ver que haya quedado joya
+        # plt.figure(figsize=(8, 6))
+        # plt.scatter(x_track, y_track, color='gray', alpha=0.3, label='Tracking crudo')
+        # plt.errorbar(x_mean, y_mean, xerr=x_std, yerr=y_std, fmt='ro', 
+        #             capsize=3, label='Centroides (promedio)')
+        # plt.xlabel('Desplazamiento X')
+        # plt.ylabel('Desplazamiento Y')
+        # plt.title(f'Promediado de Clústers de Tracking {i}')
+        # plt.legend()
+        # plt.grid(True)
+        # plt.show()
 
         dc_x = range(0,65535,3276)
         dc_x = (1/65535)*np.array(dc_x)

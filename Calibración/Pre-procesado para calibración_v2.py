@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd 
 
 #%%
-trayectorias_path = r'C:\Users\LEC\Desktop\Laboratorio6\Analisis de video\Datos_tray\Discreto_x_0506_v2.csv'
+trayectorias_path = r'C:\Users\LEC\Desktop\Laboratorio6\Analisis de video\Datos_tray\Continuo_x_0906_correc_horax.csv'
 data = pd.read_csv(trayectorias_path)
 dc_y = range(0,65535,3276)
 dc_x = range(0,65535,3276)

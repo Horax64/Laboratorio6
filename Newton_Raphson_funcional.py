@@ -10,8 +10,10 @@ import matplotlib.pyplot as plt
 promedio_cross_x = [-0.03461811951503092,0]
 promedio_cross_y = [-0.07531236878047691,0]
 
-datos_ajuste_x = pd.read_csv('\ajuste_cubico_x.csv') 
-datos_ajuste_y= pd.read_csv('\ajuste_cubico_y.csv')
+iteraciones_NR = 50
+
+datos_ajuste_x = pd.read_csv(r'ajuste_cubico_x.csv') 
+datos_ajuste_y= pd.read_csv(r'ajuste_cubico_y.csv')
 
 promedio_x = datos_ajuste_x.mean()[1::]
 coefs_x = [coef for coef in promedio_x] 
@@ -78,16 +80,16 @@ def dc_scanning(paso_x,paso_y):
     dcs_y = []
 
     for dc_x0,x in zip(dc_x_inicial,X_final):
-        dcx = NR_npasos_x(dc_x0,x,20)
+        dcx = NR_npasos_x(dc_x0,x,iteraciones_NR)
         dcs_x.append(dcx)
         
         for dc_y, y in zip(dc_y_inicial,Y_final):
-            dcy = NR_npasos_y(dc_y,x,y,20)
+            dcy = NR_npasos_y(dc_y,x,y,iteraciones_NR)
             dcs_y.append(dcy)
 
     return dcs_x, dcs_y
 
-paso = 0.05
+paso = 0.01
 cant_pasos = int(1/paso)
 dcsx_0,dcsy_0 = dc_scanning(paso,paso)
 #print(np.array(dcsy_0).reshape(20,20).T.reshape(1,400))
@@ -103,7 +105,7 @@ for _ in range(0,cant_pasos):
     dcs_x.extend(dcsx_0)
 
 #Restringimos el dominio para evitar problemas de borde
-borde_a_eliminar = 2
+borde_a_eliminar = 10
 extremo = cant_pasos*borde_a_eliminar
 dcs_x_recort = dcs_x[extremo:-extremo]
 dcs_y_recort = dcs_y[extremo:-extremo]
@@ -175,14 +177,14 @@ def dc_x_correct(paso_x,paso_y,dcs_x):
 
     for y in Y_final:
         for dc_x0,x in zip(dc_x_inicial,X_final):
-            dcx = NR_npasos_x_2ord(dc_x0,x,y,20)
+            dcx = NR_npasos_x_2ord(dc_x0,x,y,iteraciones_NR)
             dcs_x_correct.append(dcx)
 
     return dcs_x_correct
 
 dcs_x_correct = dc_x_correct(paso,paso,dcs_x)
 
-borde_a_eliminar = 2
+borde_a_eliminar = 10
 extremo = cant_pasos*borde_a_eliminar
 dcs_x_recort = dcs_x_correct[extremo:-extremo]
 dcs_y_recort = dcs_y[extremo:-extremo]

@@ -10,7 +10,7 @@ import pandas as pd
 #%%
 """Configuración de rutas y visualización de una fila"""
 
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_1805_proc.csv'
+trayectorias_path = r'Analisis de video\Datos_tray\Continuo_x_0906_correc_horax.csv'
 data = pd.read_csv(trayectorias_path)
 filas = data['fila'].unique()
 fila = 3
@@ -55,10 +55,8 @@ plt.show()
 
 #%%
 """
-Ajuste de las no linealidades del barrido de x.
-Vamos a ajustar (X_real = f(dc_x)).
+Código para promediar los clusters obtenidos en el barrido discreto y obtener puntos relacionados con cada duty cycle
 """
-# Código para promediar los clusters obtenidos en el barrido discreto 
 
 def promediar_clusters_corregido(x_data, y_data, umbral_x):
     """
@@ -93,11 +91,15 @@ def promediar_clusters_corregido(x_data, y_data, umbral_x):
     print(f"Detectados {len(x_promedios)} clústers (pasos) válidos.")
     
     return x_promedios, y_promedios, x_err, y_err
-
-ajustes_nolineal_y = []
-
 #%%
+"""
+Visualización y ajustes de las no linealidades en x para cada fila.
+Buscamos V_x = f(X_real) y lo ajustamos con un polinomio de grado 3.
+"""
+cantidad_dcs = 21 #Es necesario tener en claro cuales fueron los dcs para cada punto.
+                  #Asumimos que mandamos un array equiespaciado que recorre todos los posibles valores de dcx en cada fila.
 
+ajustes_nolineal_x = []
 
 for fila in filas:
     try:
@@ -109,8 +111,6 @@ for fila in filas:
         umbral_x = 1  # Umbral en pixeles para separar clusters (mucho mayor al "ruido" del tracker)
 
         x_mean, y_mean, x_std, y_std = promediar_clusters_corregido(x_track, y_track, umbral_x)
-
-        print(len(x_mean))
 
         # # Visualización rápida para ver que haya quedado joya
         # plt.figure(figsize=(8, 6))
@@ -124,22 +124,24 @@ for fila in filas:
         # plt.grid(True)
         # plt.show()
 
-        dc_x = np.linspace(0,1,20)
+        dc_x = np.linspace(0,1,cantidad_dcs)
         # Calibración de distancia
 
-        coef = np.polyfit(dc_x,x_mean,3)
+        coef = np.polyfit(x_mean,dc_x,3)
+
         def pol(x,c,d,e,f):
             return  c*x**3 + d*x**2 + e*x + f
 
-        # plt.plot(dc_x,pol(dc_x,*coef),'r',label='Ajuste polinomio grado 4')
-        # plt.scatter(dc_x[1:-3],-np.diff(x_mean)[0:-3])
-        # plt.title('Histéresis de ida en x')
-        # plt.xlabel('Duty cycle')
-        # plt.ylabel('x[um]')
-        # plt.gca().invert_yaxis()
-        # plt.grid(True)
+        plt.plot(x_mean,pol(x_mean,*coef),'r',label='Ajuste polinomio grado 4')
+        plt.scatter(x_mean,dc_x)
+        plt.title('No linealidades ida x (dc_x vs x)')
+        plt.ylabel('Duty cycle (Norm)')
+        plt.xlabel('x[px]')
+        plt.grid(True)
+
     except:
         1   
+
 plt.show()
 
 #%%
@@ -150,7 +152,7 @@ for i,fila in enumerate(filas):
     x_track = data[data['fila']==fila]['X']
     y_track = data[data['fila']==fila]['Y']
 
-    umbral_x = 1  # Ajustá esto según el "paso" en micrómetros o píxeles de tu barrido
+    umbral_x = 1  # Umbral en pixeles para separar clusters (mucho mayor al "ruido" del tracker)
 
     x_mean, y_mean, x_std, y_std = promediar_clusters_corregido(x_track, y_track, umbral_x)
 
@@ -170,33 +172,13 @@ for i,fila in enumerate(filas):
         dc_x = range(0,65535,3276)
         dc_x = (1/65535)*np.array(dc_x)
 
-        print(dc_x)
         # Calibración de distancia
         x_mean = x_mean*0.025239
 
-        coef = np.polyfit(dc_x,x_mean,3)
-        ajustes_nolineal_y.append((i,coef))
-        def pol4(x,c,d,e,f):
-            return  c*x**3 + d*x**2 + e*x + f
-
-        # plt.plot(dc_x,pol4(dc_x,*coef),'r',label='Ajuste polinomio grado 4')
-        # plt.scatter(dc_x,y_mean)
-        # plt.title('Histéresis de ida en x')
-        # plt.xlabel('Duty cycle')
-        # plt.ylabel('x[um]')
-        # plt.gca().invert_yaxis()
-        # plt.grid(True)
-
-print(ajustes_nolineal_y)
-
-plt.show()
-
-
-coef_principales = [coefs[0] for fila,coefs in ajustes_nolineal_y]
-print(coef_principales)
-
+        coef = np.polyfit(x_mean,dc_x,3)
+        ajustes_nolineal_x.append([i,coef])
 # Juntamos el número con los elementos del array en una sola lista por fila
-filas = [[numero] + list(array) for numero, array in ajustes_nolineal_y]
+filas = [[numero] + list(array) for numero, array in ajustes_nolineal_x]
 
 # Creamos el DataFrame
 df = pd.DataFrame(filas)
@@ -205,7 +187,7 @@ df = pd.DataFrame(filas)
 df.columns = ['Fila', 'a', 'b', 'c','d']
 
 # Lo exportamos a .csv sin el índice automático de pandas
-df.to_csv('ajuste_cubico_y.csv', index=False)
+df.to_csv('ajuste_cubico_x_calv2.csv', index=False)
 # x_track = data[data['fila']==0]['X']
 # y_track = data[data['fila']==0]['Y']
 
@@ -229,3 +211,4 @@ ordenada_promedio_cross_x = 316.7424179043115
 
 pend_promedio_cross_y = -0.07531236878047691
 ordenada_promedio_cross_y = 1485.4739436704124
+# %%

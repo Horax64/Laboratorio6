@@ -15,8 +15,8 @@ promedio_cross_y = [-0.07531236878047691, 0]
 try:
     # Intenta leer tus datos de ajuste. 
     # Al usar poly1d, si las columnas de promedio_x tienen 4 elementos, arma grado 3 solo.
-    datos_ajuste_x = pd.read_csv('ajuste_cubico_x.csv') 
-    datos_ajuste_y = pd.read_csv('ajuste_cubico_y.csv')
+    datos_ajuste_x = pd.read_csv(r'C:\Users\LEC\Desktop\Laboratorio6\ajuste_cubico_x.csv') 
+    datos_ajuste_y = pd.read_csv(r'C:\Users\LEC\Desktop\Laboratorio6\ajuste_cubico_y.csv')
 
     promedio_x = datos_ajuste_x.mean()[1::]
     coefs_x = [coef for coef in promedio_x] 
@@ -140,7 +140,7 @@ def desplazamientos(dcx_inicial, dcx_final, dcy_inicial, dcy_final, paso_um):
 
 # ATENCIÓN ACÁ HORAX: El "paso" ahora debe estar en micrómetros. 
 # Si tu rango físico es de aprox 5 um, un paso de 0.5 um te da 10 puntos por lado.
-PASO_MICRONES = 0.5 
+PASO_MICRONES = 1 
 
 dcx_calc, dcy_calc, obj_x, obj_y = desplazamientos(0.0, 1.0, 0.0, 1.0, paso_um=PASO_MICRONES)
 
@@ -188,3 +188,6 @@ plt.legend()
 
 plt.tight_layout()
 plt.show()
+
+dutys_csv = pd.DataFrame({'Dcx': dcx_calc,'Dcy':dcy_calc})
+dutys_csv.to_csv(r'dutys_v4_csv.csv')

@@ -6,7 +6,9 @@ import pandas as pd
 import cv2 as cv
 
 # 1. Configuración de rutas y parámetros
-file_name = 'Continuo_x_0906_correc_horax'
+file_name = 'Discreto_x_correct_horax_2_1006' \
+'' \
+''
 video_path = rf'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\{file_name}.mp4'
 fps = tracker.fps(video_path)
 
@@ -80,7 +82,7 @@ if not df_trayectoria.empty:
 
     # 5. Visualización de resultados con Matplotlib (Muestra todo el barrido continuo concatenado)
     plt.figure(figsize=(9, 7))
-    plt.plot(df_trayectoria['X'], df_trayectoria['Y'], label='Trayectoria global unificada', color='b', alpha=0.6)
+    plt.scatter(df_trayectoria['X'], df_trayectoria['Y'], label='Trayectoria global unificada', color='b', alpha=0.6)
     plt.gca().invert_yaxis() 
     plt.xlabel("X (píxeles)")
     plt.ylabel("Y (píxeles)")

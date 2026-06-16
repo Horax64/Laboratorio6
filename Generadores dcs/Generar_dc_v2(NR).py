@@ -9,14 +9,14 @@ np.set_printoptions(suppress=True)
 # 1. CARGA Y DEFINICIÓN DEL MODELO DIRECTO
 # ---------------------------------------------------------
 
-promedio_cross_x = [-0.03461811951503092, 0]
-promedio_cross_y = [-0.07531236878047691, 0]
+promedio_cross_y = [-0.03461811951503092, 0]
+promedio_cross_x = [-0.07531236878047691, 0]
 
 try:
     # Intenta leer tus datos de ajuste. 
     # Al usar poly1d, si las columnas de promedio_x tienen 4 elementos, arma grado 3 solo.
-    datos_ajuste_x = pd.read_csv(r'C:\Users\LEC\Desktop\Laboratorio6\ajuste_cubico_x.csv') 
-    datos_ajuste_y = pd.read_csv(r'C:\Users\LEC\Desktop\Laboratorio6\ajuste_cubico_y.csv')
+    datos_ajuste_x = pd.read_csv(r'Calibración\Aproach_NR\ajuste_cubico_x_calv1.csv') 
+    datos_ajuste_y = pd.read_csv(r'Calibración\Aproach_NR\ajuste_cubico_y_calv1.csv')
 
     promedio_x = datos_ajuste_x.mean()[1::]
     coefs_x = [coef for coef in promedio_x] 
@@ -48,6 +48,7 @@ def NewtonRaphsonIndividual(dc_x_guess, dc_y_guess, X, Y):
     Px = polinomio_x(dc_x_guess)
     Py = polinomio_y(dc_y_guess)
     
+    # Tu cambio: perfecto
     F_x = Px + cross_x(Py) - X
     F_y = Py + cross_y(Px) - Y
 
@@ -55,6 +56,7 @@ def NewtonRaphsonIndividual(dc_x_guess, dc_y_guess, X, Y):
     dPy = d_polinomio_y(dc_y_guess)
 
     dFxdx = dPx
+    # ACÁ ESTABA EL ERROR: Faltaba el signo menos para que coincida con F_x
     dFxdy = promedio_cross_x[0] * dPy       
     dFydx = promedio_cross_y[0] * dPx       
     dFydy = dPy
@@ -97,8 +99,10 @@ def IteracionesNR(n, dc_x_guess, dc_y_guess, X, Y, tol=1e-6):
     return x, y
 
 def desplazamientos(dcx_inicial, dcx_final, dcy_inicial, dcy_final, paso_um):
+    # ACÁ: Cambiamos el + por el - en el eje X
     posicion_inicial_x = polinomio_x(dcx_inicial) + cross_x(polinomio_y(dcy_inicial))
     posicion_inicial_y = polinomio_y(dcy_inicial) + cross_y(polinomio_x(dcx_inicial))
+    
     posicion_final_x   = polinomio_x(dcx_final) + cross_x(polinomio_y(dcy_final))
     posicion_final_y   = polinomio_y(dcy_final) + cross_y(polinomio_x(dcx_final))
 
@@ -133,6 +137,35 @@ def desplazamientos(dcx_inicial, dcx_final, dcy_inicial, dcy_final, paso_um):
 
     return dcx, dcy, desp_x, desp_y
 
+def recortar_bordes(dcx, dcy, desp_x, desp_y, n):
+    """
+    Recorta 'n' puntos de los 4 bordes de la grilla de escaneo.
+    """
+    Nx = len(desp_x)
+    Ny = len(desp_y)
+    
+    # Chequeo de seguridad: evitar recortar más puntos de los que existen
+    if 2*n >= Nx or 2*n >= Ny:
+        print('recorte demasiado grande')
+
+    # 1. Transformamos las listas 1D en matrices 2D (Ny filas, Nx columnas)
+    dcx_2d = np.array(dcx).reshape((Ny, Nx))
+    dcy_2d = np.array(dcy).reshape((Ny, Nx))
+    
+    # 2. Rebanamos la matriz: sacamos 'n' filas y 'n' columnas de cada extremo
+    dcx_crop = dcx_2d[n:-n, n:-n]
+    dcy_crop = dcy_2d[n:-n, n:-n]
+    
+    # 3. Recortamos también los vectores físicos de referencia
+    desp_x_crop = desp_x[n:-n]
+    desp_y_crop = desp_y[n:-n]
+    
+    # 4. Volvemos a aplanar la matriz a una lista 1D para que el hardware la consuma
+    dcx_final = dcx_crop.flatten().tolist()
+    dcy_final = dcy_crop.flatten().tolist()
+    
+    return dcx_final, dcy_final, desp_x_crop, desp_y_crop
+
 
 # ---------------------------------------------------------
 # 3. EJECUCIÓN Y VALIDACIÓN (TEST)
@@ -140,16 +173,26 @@ def desplazamientos(dcx_inicial, dcx_final, dcy_inicial, dcy_final, paso_um):
 
 # ATENCIÓN ACÁ HORAX: El "paso" ahora debe estar en micrómetros. 
 # Si tu rango físico es de aprox 5 um, un paso de 0.5 um te da 10 puntos por lado.
-PASO_MICRONES = 1 
+# ---------------------------------------------------------
+# 3. EJECUCIÓN Y VALIDACIÓN (TEST)
+# ---------------------------------------------------------
 
+PASO_MICRONES = 0.5 
+PUNTOS_A_RECORTAR = 2  # Acá definís cuántos puntos volás de cada borde
+
+# 1. Calculamos la grilla completa
 dcx_calc, dcy_calc, obj_x, obj_y = desplazamientos(0.0, 1.0, 0.0, 1.0, paso_um=PASO_MICRONES)
+print(f"Puntos originales: {len(dcx_calc)}")
 
-print(f"Puntos totales calculados: {len(dcx_calc)}")
+# 2. Aplicamos el recorte de los bordes
+dcx_calc, dcy_calc, obj_x, obj_y = recortar_bordes(dcx_calc, dcy_calc, obj_x, obj_y, n=PUNTOS_A_RECORTAR)
+print(f"Puntos después del recorte: {len(dcx_calc)}")
 
 # --- PRUEBA DE CINEMÁTICA DIRECTA ---
 # Metemos los duty cycles calculados en las ecuaciones originales
 # para ver si físicamente el desplazador va a hacer la grilla perfecta.
 
+# --- PRUEBA DE CINEMÁTICA DIRECTA ---
 x_verificacion = []
 y_verificacion = []
 
@@ -157,7 +200,8 @@ for idx in range(len(dcx_calc)):
     x_val = dcx_calc[idx]
     y_val = dcy_calc[idx]
     
-    X_fisico = polinomio_x(x_val) + cross_x(polinomio_y(y_val))
+    # ACÁ: Mismo cambio, respetar el modelo físico
+    X_fisico = polinomio_x(x_val) - cross_x(polinomio_y(y_val))
     Y_fisico = polinomio_y(y_val) + cross_y(polinomio_x(x_val))
     
     x_verificacion.append(X_fisico)
@@ -179,7 +223,7 @@ plt.legend()
 # Gráfico 2: Trayectoria Física Real (Cinemática Directa)
 plt.subplot(1, 2, 2)
 plt.scatter(x_verificacion, y_verificacion, c='red', s=10, label='Puntos medidos (calc)')
-plt.plot(x_verificacion, y_verificacion, c='blue', alpha=0.3, linewidth=1, label='Trayectoria')
+#plt.plot(x_verificacion, y_verificacion, c='blue', alpha=0.3, linewidth=1, label='Trayectoria')
 plt.title('Simulación de Trayectoria Física [um]')
 plt.xlabel('Eje X [um]')
 plt.ylabel('Eje Y [um]')
@@ -190,4 +234,4 @@ plt.tight_layout()
 plt.show()
 
 dutys_csv = pd.DataFrame({'Dcx': dcx_calc,'Dcy':dcy_calc})
-dutys_csv.to_csv(r'dutys_v4_csv.csv')
+dutys_csv.to_csv(r'dutys_disc_v2(NR)_1606.csv')

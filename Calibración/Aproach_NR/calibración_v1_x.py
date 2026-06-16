@@ -16,8 +16,8 @@ warnings.filterwarnings('error', category=np.exceptions.RankWarning)
 umppx = 0.025239
 #%%
 """Configuración de rutas y visualización de una fila."""
-
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_1805_proc.csv'
+file = 'Discreto_cali_x_1606'
+trayectorias_path = fr'Analisis de video\Datos_tray\{file}_proc.csv'
 data = pd.read_csv(trayectorias_path)
 filas = data['fila'].unique()
 fila = 3
@@ -51,7 +51,7 @@ for i,fila in enumerate(filas):
     popt, pcov = curve_fit(lineal,x_traj,y_traj,p0=[1,0])
     ajustes_lineal_x.append([i,popt[0],popt[1]])
 
-    ## Visualización del ajuste lineal
+    # # Visualización del ajuste lineal
     # plt.title(f'Ajuste lineal para la fila {i}')
     # plt.scatter(x_traj,y_traj)
     # puntos_graf = np.linspace(min(x_traj),max(x_traj),1000)
@@ -139,7 +139,7 @@ for fila in filas:
 Buscamos V_x = f(X_real) y lo ajustamos con un polinomio de grado 3.
 """
 
-cantidad_dcs = 21 #Es necesario tener en claro cuales fueron los dcs para cada punto.
+cantidad_dcs = 16 #Es necesario tener en claro cuales fueron los dcs para cada punto.
                   #Asumimos que mandamos un array equiespaciado
 ajustes_nolineal_x = []
 
@@ -152,7 +152,7 @@ for i,fila in enumerate(filas):
     x_mean, y_mean, x_std, y_std = promediar_clusters(x_track, y_track, umbral_x)
 
     if len(x_mean) == cantidad_dcs:
-        dc_x = range(0,65535,3276)
+        dc_x = np.linspace(0,65535,cantidad_dcs)
         dc_x = (1/65535)*np.array(dc_x)
 
         # Calibración de distancia
@@ -183,10 +183,12 @@ filas_nolin = [[numero] + list(array) for numero, array in ajustes_nolineal_x]
 # Coeficientes del polinomio: dc_x = a*x^3 + b*x^2 + c*x +d; dónde dc_x norm. y, x en um
 df_nolin = pd.DataFrame(filas_nolin)
 df_nolin.columns = ['Fila', 'a', 'b', 'c','d']
-df_nolin.to_csv('ajuste_cubico_x_calv1.csv', index=False)
+df_nolin.to_csv('ajuste_cubico_x_calv1_1606.csv', index=False)
 
 # Coeficientes del ajuste lineal: y = m*x + b; dónde x, y en px
 filas_lin = [[numero,m,b]  for numero, m, b in ajustes_lineal_x]
 df_lin = pd.DataFrame(filas_lin)
 df_lin.columns = ['Fila', 'm', 'b']
-df_lin.to_csv('ajuste_lin_x_calv1.csv', index=False)
+df_lin.to_csv('ajuste_lin_x_calv1_1606.csv', index=False)
+
+# %%

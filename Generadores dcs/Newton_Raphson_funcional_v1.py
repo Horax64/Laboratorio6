@@ -12,8 +12,8 @@ promedio_cross_y = [-0.07531236878047691,0]
 
 iteraciones_NR = 50
 
-datos_ajuste_x = pd.read_csv(r'ajuste_cubico_x.csv') 
-datos_ajuste_y= pd.read_csv(r'ajuste_cubico_y.csv')
+datos_ajuste_x = pd.read_csv(r'ajuste_cubico_x_calv1.csv') 
+datos_ajuste_y= pd.read_csv(r'ajuste_cubico_y_calv1.csv')
 
 promedio_x = datos_ajuste_x.mean()[1::]
 coefs_x = [coef for coef in promedio_x] 
@@ -226,11 +226,12 @@ for i in range(0,ancho):
 plt.scatter(pos_x_final.T.reshape(1,ancho**2),pos_y_final.T.reshape(1,ancho**2))
 plt.show()
 
-
-# %%
+#%%
 """Guardado final de arrays"""
 
 dutys_csv = pd.DataFrame({'Dcx': dcs_x_recort,'Dcy':dcs_y_recort})
-dutys_csv.to_csv(r'dutys_v3_csv.csv')
+route = 'Dutys\Continuos'
+file = 'dutys_cont_v1_csv'
+dutys_csv.to_csv(rf'{route}\{file}.csv')
 
 # %%

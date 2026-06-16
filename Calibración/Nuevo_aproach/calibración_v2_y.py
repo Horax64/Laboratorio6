@@ -135,8 +135,8 @@ for col in columnas:
     # plt.show()
 #%%
 
-"""Ajustes de las no linealidades en x para cada fila.
-Buscamos V_x = f(X_real) y lo ajustamos con un polinomio de grado 3.
+"""Ajustes de las no linealidades en y para cada columna.
+Buscamos V_y = f(Y_real) y lo ajustamos con un polinomio de grado 3.
 """
 
 cantidad_dcs = 21 #Es necesario tener en claro cuales fueron los dcs para cada punto.
@@ -144,8 +144,8 @@ cantidad_dcs = 21 #Es necesario tener en claro cuales fueron los dcs para cada p
 ajustes_nolineal_y = []
 
 for i,col in enumerate(columnas):
-    x_track = data[data['columna']==col]['X']
-    y_track = data[data['columna']==col]['Y']
+    x_track = data[data['columna']==col]['X'] - np.min(data[data['columna']==col]['X'])
+    y_track = data[data['columna']==col]['Y'] - np.min(data[data['columna']==col]['Y'])
 
     umbral_x = 1  # Umbral en pixeles para separar clusters (mucho mayor al "ruido" del tracker)
 
@@ -184,6 +184,7 @@ df_nolin = pd.DataFrame(columnas_nolin)
 df_nolin.columns = ['Columnas', 'a', 'b', 'c','d']
 df_nolin.to_csv('ajuste_cubico_y_calv2.csv', index=False)
 
+#%%
 # Coeficientes del ajuste lineal: x = m*y + b; dónde y, x en px
 columnas_lin = [[numero,m,b]  for numero, m, b in ajustes_lineal_y]
 df_lin = pd.DataFrame(columnas_lin)

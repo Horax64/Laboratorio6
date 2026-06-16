@@ -17,7 +17,7 @@ umppx = 0.025239
 #%%
 """Configuración de rutas y visualización de una fila."""
 
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_2605.csv'
+trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_1805_proc.csv'
 data = pd.read_csv(trayectorias_path)
 filas = data['fila'].unique()
 fila = 3
@@ -144,8 +144,8 @@ cantidad_dcs = 21 #Es necesario tener en claro cuales fueron los dcs para cada p
 ajustes_nolineal_x = []
 
 for i,fila in enumerate(filas):
-    x_track = data[data['fila']==fila]['X']
-    y_track = data[data['fila']==fila]['Y']
+    x_track = data[data['fila']==fila]['X']- np.min(data[data['fila']==fila]['X'])
+    y_track = data[data['fila']==fila]['Y'] - np.min(data[data['fila']==fila]['Y'])
 
     umbral_x = 1  # Umbral en pixeles para separar clusters (mucho mayor al "ruido" del tracker)
 
@@ -179,14 +179,17 @@ que el ajuste pudo realizarse.
 
 # Juntamos el número con los elementos del array en una sola lista por fila
 filas_nolin = [[numero] + list(array) for numero, array in ajustes_nolineal_x]
-
 # Coeficientes del polinomio: dc_x = a*x^3 + b*x^2 + c*x +d; dónde dc_x norm. y, x en um
 df_nolin = pd.DataFrame(filas_nolin)
 df_nolin.columns = ['Fila', 'a', 'b', 'c','d']
 df_nolin.to_csv('ajuste_cubico_x_calv2.csv', index=False)
+
+#%%
 
 # Coeficientes del ajuste lineal: y = m*x + b; dónde x, y en px
 filas_lin = [[numero,m,b]  for numero, m, b in ajustes_lineal_x]
 df_lin = pd.DataFrame(filas_lin)
 df_lin.columns = ['Fila', 'm', 'b']
 df_lin.to_csv('ajuste_lin_x_calv2.csv', index=False)
+
+# %%

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#%%
 from trackerclass_v4 import tracker
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -12,6 +13,8 @@ data = pd.read_csv(trayectorias_path)
 
 plt.scatter(data['X'], data['Y'], s = 10)
 plt.show()
+
+#%%
 
 def distancia_euclidiana(p1, p2):
     return np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)

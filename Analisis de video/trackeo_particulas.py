@@ -1,12 +1,14 @@
+#%%
 # -*- coding: utf-8 -*-
 from trackerclass_v4 import tracker
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import cv2 as cv
-
+#%%
 # 1. Configuración de rutas y parámetros
-file_name = 'Discreto_x_1805'
+file_name = 'Discreto_x_1906' 
+
 video_path = rf'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\{file_name}.mp4'
 fps = tracker.fps(video_path)
 
@@ -19,7 +21,7 @@ t_inicio = 0
 # Parámetros del experimento
 frame_actual = int(fps * t_inicio) 
 ancho_busqueda = [50, 50]    
-velocidad_visualizacion = 10  
+velocidad_visualizacion = 1  
 
 df_trayectoria = pd.DataFrame()
 
@@ -78,9 +80,11 @@ if not df_trayectoria.empty:
     df_trayectoria.to_csv(f'{file_name}.csv', index=False)
     print(f"\nProceso finalizado con éxito. Datos guardados en {file_name}.csv")
 
+#%% 
+    df_trayectoria = pd.read_csv(fr'C:\Users\LEC\Desktop\Laboratorio6\Analisis de video\Discreto_x_1906.csv')
     # 5. Visualización de resultados con Matplotlib (Muestra todo el barrido continuo concatenado)
     plt.figure(figsize=(9, 7))
-    plt.plot(df_trayectoria['X'], df_trayectoria['Y'], label='Trayectoria global unificada', color='b', alpha=0.6)
+    plt.scatter(df_trayectoria['X'], df_trayectoria['Y'], label='Trayectoria global unificada', color='b', alpha=0.6)
     plt.gca().invert_yaxis() 
     plt.xlabel("X (píxeles)")
     plt.ylabel("Y (píxeles)")
@@ -88,5 +92,6 @@ if not df_trayectoria.empty:
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()
-else:
+#else:
     print("\nNo se registraron datos en la trayectoria.")
+# %%

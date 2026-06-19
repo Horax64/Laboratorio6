@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#%%
 from trackerclass_v4 import tracker
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -7,11 +8,14 @@ import cv2 as cv
 import time
 
 # 1. Configuración de rutas y parámetros
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_1805.csv'
+file = 'Discreto_x_2905_correcciones_proc'
+trayectorias_path = fr'Analisis de video\Datos_tray\{file}.csv'
 data = pd.read_csv(trayectorias_path)
 
 plt.scatter(data['X'], data['Y'], s = 10)
 plt.show()
+
+#%%
 
 def distancia_euclidiana(p1, p2):
     return np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
@@ -52,7 +56,7 @@ tiempos_corte = np.ones(len(data)) * -1
 
 # 2. Iteramos sobre los rangos y "pintamos" el tiempo correspondiente
 for id0, id1 in lineas_scanning:
-    tiempo_0 = data['Tiempo_seg'].iloc[id0]
+    tiempo_0 = data['t_0_video'].iloc[id0]
     
     # Asignamos tiempo_0 desde id0 hasta id1 (usamos +1 porque el límite superior es exclusivo en Python)
     tiempos_corte[id0:id1+1] = tiempo_0
@@ -61,8 +65,8 @@ for id0, id1 in lineas_scanning:
 data['Tiempos_corte'] = tiempos_corte
 
 
-file_name = 'Prueba_separación_automática'
-data.to_csv(f'{file_name}.csv', index=False)  
+file_name = r'Analisis de video\Datos_tray\Prueba_separación_automática'
+#data.to_csv(f'{file_name}.csv', index=False)  
 
 print(f'Largo de data: {len(data)}')
 print(f'Largo de tiempos_corte: {len(data["Tiempos_corte"])}')

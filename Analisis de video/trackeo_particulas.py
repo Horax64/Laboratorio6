@@ -45,7 +45,7 @@ while frame_actual < total_frames:
         # Ajusta 'limite_salto' (píxeles) y 'max_predicciones' (frames perdidos) según la velocidad de tu setup
         x_traj, y_traj, ultimo_frame, salto_detectado = tracker.corr(
             video_path, template, obs, centro, velocidad_visualizacion, duracion, canal=0,
-            limite_salto=20, max_predicciones=3
+            limite_salto=10, max_predicciones=3
         )
         
         # Si se capturaron datos válidos en este tramo, los estructuramos

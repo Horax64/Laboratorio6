@@ -17,7 +17,8 @@ umppx = 0.025239
 #%%
 """Configuración de rutas y visualización de una columna."""
 
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_y_2705_v2_proc.csv'
+file = 'Calibracion_y_1906'
+trayectorias_path = fr'Analisis de video\Datos_tray\{file}_proc.csv'
 data = pd.read_csv(trayectorias_path)
 columnas = data['columna'].unique()
 col = 3
@@ -58,7 +59,7 @@ for i,col in enumerate(columnas):
     # plt.plot(puntos_graf,lineal(puntos_graf,*popt))
     # plt.show()
 
-## Si queremos podemos visualizar la distribución de las pendientes halladas para todas las filas
+## Si queremos podemos visualizar la distribución de las pendientes halladas para todas las columnas
 
 # ajustes_array = np.array(ajustes_lineal_x)
 # pendiente = ajustes_array[:,1]
@@ -111,7 +112,7 @@ def promediar_clusters(x_data, y_data, umbral_x):
     return x_promedios, y_promedios, x_err, y_err
 
 #%%
-""" Visualización del resultado de los clusters para cada fila.
+""" Visualización del resultado de los clusters para cada columna.
 Esta sección ayuda a corregir errores de ajustes de la proxima sección.
 """
 for col in columnas:
@@ -122,24 +123,24 @@ for col in columnas:
 
     x_mean, y_mean, x_std, y_std = promediar_clusters(x_track, y_track, umbral_x)
 
-    # Visualización rápida para ver que hacemos en cada fila
-    plt.figure(figsize=(8, 6))
-    plt.scatter(x_track, y_track, color='gray', alpha=0.3, label='Tracking crudo')
-    plt.errorbar(x_mean, y_mean, xerr=x_std, yerr=y_std, fmt='ro', 
-                capsize=3, label='Centroides (promedio)')
-    plt.xlabel('Desplazamiento X')
-    plt.ylabel('Desplazamiento Y')
-    plt.title(f'Promediado de Clústers de Tracking {col}')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    # Visualización rápida para ver que hacemos en cada columna
+    # plt.figure(figsize=(8, 6))
+    # plt.scatter(x_track, y_track, color='gray', alpha=0.3, label='Tracking crudo')
+    # plt.errorbar(x_mean, y_mean, xerr=x_std, yerr=y_std, fmt='ro', 
+    #             capsize=3, label='Centroides (promedio)')
+    # plt.xlabel('Desplazamiento X')
+    # plt.ylabel('Desplazamiento Y')
+    # plt.title(f'Promediado de Clústers de Tracking {col}')
+    # plt.legend()
+    # plt.grid(True)
+    # plt.show()
 #%%
 
-"""Ajustes de las no linealidades en x para cada fila.
+"""Ajustes de las no linealidades en x para cada columna.
 Buscamos V_x = f(X_real) y lo ajustamos con un polinomio de grado 3.
 """
 
-cantidad_dcs = 21 #Es necesario tener en claro cuales fueron los dcs para cada punto.
+cantidad_dcs = 16 #Es necesario tener en claro cuales fueron los dcs para cada punto.
                   #Asumimos que mandamos un array equiespaciado
 ajustes_nolineal_y = []
 
@@ -152,7 +153,7 @@ for i,col in enumerate(columnas):
     x_mean, y_mean, x_std, y_std = promediar_clusters(x_track, y_track, umbral_x)
 
     if len(y_mean) == cantidad_dcs:
-        dc_y = range(0,65535,3276)
+        dc_y = np.linspace(0,65535,cantidad_dcs)
         dc_y = (1/65535)*np.array(dc_y)
 
         # Calibración de distancia
@@ -172,20 +173,20 @@ for i,col in enumerate(columnas):
         plt.show()
 #%%
 """Guardado de coieficientes.
-Guardamos los datos que conseguimos en un csv para las filas en las
+Guardamos los datos que conseguimos en un csv para las columnas en las
 que el ajuste pudo realizarse.
 """
 
-# Juntamos el número con los elementos del array en una sola lista por fila
-filas_nolin = [[numero] + list(array) for numero, array in ajustes_nolineal_y]
+# Juntamos el número con los elementos del array en una sola lista por columna
+columnas_nolin = [[numero] + list(array) for numero, array in ajustes_nolineal_y]
 
 # Coeficientes del polinomio: dc_y = a*y^3 + b*y^2 + c*y +d; dónde dc_y norm. y, x en um
-df_nolin = pd.DataFrame(filas_nolin)
-df_nolin.columns = ['Fila', 'a', 'b', 'c','d']
+df_nolin = pd.DataFrame(columnas_nolin)
+df_nolin.columns = ['columna', 'a', 'b', 'c','d']
 df_nolin.to_csv('ajuste_cubico_y_calv1.csv', index=False)
 
 # Coeficientes del ajuste lineal: x = m*y + b; dónde y, x en px
-filas_lin = [[numero,m,b]  for numero, m, b in ajustes_lineal_y]
-df_lin = pd.DataFrame(filas_lin)
-df_lin.columns = ['Fila', 'm', 'b']
+columnas_lin = [[numero,m,b]  for numero, m, b in ajustes_lineal_y]
+df_lin = pd.DataFrame(columnas_lin)
+df_lin.columns = ['columna', 'm', 'b']
 df_lin.to_csv('ajuste_lin_y_calv1.csv', index=False)

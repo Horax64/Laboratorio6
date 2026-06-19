@@ -17,7 +17,8 @@ umppx = 0.025239
 #%%
 """Configuración de rutas y visualización de una columna."""
 
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_y_2705_v2_proc.csv'
+file = 'Calibracion_y_1906'
+trayectorias_path = fr'Analisis de video\Datos_tray\{file}_proc.csv'
 data = pd.read_csv(trayectorias_path)
 columnas = data['columna'].unique()
 col = 3
@@ -139,7 +140,7 @@ for col in columnas:
 Buscamos V_y = f(Y_real) y lo ajustamos con un polinomio de grado 3.
 """
 
-cantidad_dcs = 21 #Es necesario tener en claro cuales fueron los dcs para cada punto.
+cantidad_dcs = 16 #Es necesario tener en claro cuales fueron los dcs para cada punto.
                   #Asumimos que mandamos un array equiespaciado
 ajustes_nolineal_y = []
 
@@ -152,7 +153,7 @@ for i,col in enumerate(columnas):
     x_mean, y_mean, x_std, y_std = promediar_clusters(x_track, y_track, umbral_x)
 
     if len(y_mean) == cantidad_dcs:
-        dc_y = range(0,65535,3276)
+        dc_y = np.linspace(0,65535,cantidad_dcs)
         dc_y = (1/65535)*np.array(dc_y)
 
         # Calibración de distancia

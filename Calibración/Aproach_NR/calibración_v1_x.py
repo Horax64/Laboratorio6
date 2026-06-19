@@ -16,7 +16,7 @@ warnings.filterwarnings('error', category=np.exceptions.RankWarning)
 umppx = 0.025239
 #%%
 """Configuración de rutas y visualización de una fila."""
-file = 'Discreto_cali_x_1606'
+file = 'Discreto_x_1906'
 trayectorias_path = fr'Analisis de video\Datos_tray\{file}_proc.csv'
 data = pd.read_csv(trayectorias_path)
 filas = data['fila'].unique()

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd 
 
 #%%
-file = 'Discreto_cali_x_1606'
+file = 'Discreto_x_1906'
 trayectorias_path = fr'C:\Users\LEC\Desktop\Laboratorio6\Analisis de video\Datos_tray\{file}.csv'
 data = pd.read_csv(trayectorias_path)
 dc_y = range(0,65535,3276)
@@ -80,6 +80,6 @@ plt.show()
 # plt.show()
 #%%
 #Por ahora parece estar funcionando de forma más que adecuada, vamos a guardar los datos
-data.to_csv(f'Analisis de video\Datos_tray\{file}_proc.csv', index=False)  
+data.to_csv(rf'C:\Users\LEC\Desktop\Laboratorio6\Analisis de video\Datos_tray\{file}_proc.csv', index=False)  
 
 # %%

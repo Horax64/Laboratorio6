@@ -1,7 +1,7 @@
 """
 Método de calibración de parámetros pensado para usar el último script de calculo dcs.
 """
-#%%
+
 """Importación de librerías."""
 import numpy as np
 from scipy.optimize import curve_fit
@@ -14,8 +14,11 @@ warnings.filterwarnings('error', category=np.exceptions.RankWarning)
 
 # Conversión de pixeles a micrones
 umppx = 0.025239
-#%%
-"""Configuración de rutas y visualización de una fila."""
+
+#-------------------------------------------------------
+#  Configuración de rutas y visualización de una fila.
+#-------------------------------------------------------
+
 file = 'Discreto_x_1906'
 trayectorias_path = fr'Analisis de video\Datos_tray\{file}_proc.csv'
 data = pd.read_csv(trayectorias_path)
@@ -31,10 +34,10 @@ plt.ylabel('y [px]')
 plt.title(f'Barrido cross-talk discreto (fila {fila})')
 plt.show()
 
-#%%
-"""Ajuste de cross-talk entre ejes.
-Tomamos un modelo lineal para ajustar Y = m*X con Y y X en px
-"""
+#-------------------------------------------
+# Ajuste de cross-talk entre ejes.
+# Tomamos un modelo lineal para ajustar Y = m*X con Y y X en px
+#-------------------------------------------
 
 def lineal(x,a,b):
     return a*x + b

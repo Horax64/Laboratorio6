@@ -5,9 +5,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import cv2 as cv
+
+file_name = 'Discreto_auxiliar_2206' 
+
 #%%
 # 1. Configuración de rutas y parámetros
-file_name = 'Discreto_x_1906' 
 
 video_path = rf'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\{file_name}.mp4'
 fps = tracker.fps(video_path)
@@ -45,7 +47,7 @@ while frame_actual < total_frames:
         # Ajusta 'limite_salto' (píxeles) y 'max_predicciones' (frames perdidos) según la velocidad de tu setup
         x_traj, y_traj, ultimo_frame, salto_detectado = tracker.corr(
             video_path, template, obs, centro, velocidad_visualizacion, duracion, canal=0,
-            limite_salto=10, max_predicciones=3
+            limite_salto=20, max_predicciones=3
         )
         
         # Si se capturaron datos válidos en este tramo, los estructuramos
@@ -77,11 +79,11 @@ while frame_actual < total_frames:
 
 # Finalizado el bucle, guardamos el dataframe global definitivo
 if not df_trayectoria.empty:
-    df_trayectoria.to_csv(f'{file_name}.csv', index=False)
+    df_trayectoria.to_csv(f'Analisis de video\{file_name}.csv', index=False)
     print(f"\nProceso finalizado con éxito. Datos guardados en {file_name}.csv")
 
 #%% 
-    df_trayectoria = pd.read_csv(fr'C:\Users\LEC\Desktop\Laboratorio6\Analisis de video\Discreto_x_1906.csv')
+    df_trayectoria = pd.read_csv(fr'C:\Users\LEC\Desktop\Laboratorio6\Analisis de video\{file_name}.csv')
     # 5. Visualización de resultados con Matplotlib (Muestra todo el barrido continuo concatenado)
     plt.figure(figsize=(9, 7))
     plt.scatter(df_trayectoria['X'], df_trayectoria['Y'], label='Trayectoria global unificada', color='b', alpha=0.6)

@@ -9,8 +9,13 @@ np.set_printoptions(suppress=True)
 # 1. CARGA Y DEFINICIÓN DEL MODELO DIRECTO
 # ---------------------------------------------------------
 
+
+# Arrays de coeficientes obtenidos en los ajustes
 promedio_cross_y = [-0.03461811951503092, 0]
 promedio_cross_x = [-0.07531236878047691, 0]
+
+
+funcion_cross_y = [0.0001149, -0.00213725, -0.06267681]
 
 try:
     # Intenta leer tus datos de ajuste. 
@@ -31,8 +36,10 @@ except FileNotFoundError:
     coefs_x = [2.0, -0.5, 4.0, 0.0]  # Px(x)
     coefs_y = [1.8, -0.4, 3.8, 0.0]  # Py(y)
 
+pendiente_cross_y = np.poly1d(funcion_cross_y)
+
 cross_x = np.poly1d(promedio_cross_x)
-cross_y = np.poly1d(promedio_cross_y)
+
 
 polinomio_x = np.poly1d(coefs_x)
 polinomio_y = np.poly1d(coefs_y)
@@ -40,6 +47,7 @@ polinomio_y = np.poly1d(coefs_y)
 d_polinomio_x = np.polyder(polinomio_x)
 d_polinomio_y = np.polyder(polinomio_y)
 
+d_pendiente_cross_y = np.polyder(pendiente_cross_y)
 # ---------------------------------------------------------
 # 2. MÉTODOS NUMÉRICOS (NEWTON-RAPHSON)
 # ---------------------------------------------------------
@@ -48,6 +56,9 @@ def NewtonRaphsonIndividual(dc_x_guess, dc_y_guess, X, Y):
     Px = polinomio_x(dc_x_guess)
     Py = polinomio_y(dc_y_guess)
     
+    coef_cross_y  = [pendiente_cross_y(Py),0]
+    cross_y = np.poly1d(coef_cross_y)
+
     # Tu cambio: perfecto
     F_x = Px + cross_x(Py) - X
     F_y = Py + cross_y(Px) - Y
@@ -56,11 +67,12 @@ def NewtonRaphsonIndividual(dc_x_guess, dc_y_guess, X, Y):
     dPy = d_polinomio_y(dc_y_guess)
 
     dFxdx = dPx
-    # ACÁ ESTABA EL ERROR: Faltaba el signo menos para que coincida con F_x
     dFxdy = promedio_cross_x[0] * dPy       
-    dFydx = promedio_cross_y[0] * dPx       
-    dFydy = dPy
-
+    dFydx = coef_cross_y[0] * dPx       
+    
+    # NUEVO CÁLCULO ESTRICTO DE LA DERIVADA
+    derivada_m_cy = d_pendiente_cross_y(Py) 
+    dFydy = dPy + (Px * derivada_m_cy * dPy)
     det_J = dFxdx * dFydy - dFxdy * dFydx
     
     if abs(det_J) < 1e-12:
@@ -100,11 +112,13 @@ def IteracionesNR(n, dc_x_guess, dc_y_guess, X, Y, tol=1e-6):
 
 def desplazamientos(dcx_inicial, dcy_inicial, dcx_final, dcy_final, paso_x, paso_y):
     
+    coef_cross_y_inicial  = [pendiente_cross_y(polinomio_y(dcy_inicial)),0]
+    cross_y_inicial = np.poly1d(coef_cross_y_inicial)
     # 1. Cinemática Directa
     inicio_x = polinomio_x(dcx_inicial) + cross_x(polinomio_y(dcy_inicial))
-    inicio_y = polinomio_y(dcy_inicial) + cross_y(polinomio_x(dcx_inicial))
+    inicio_y = polinomio_y(dcy_inicial) + cross_y_inicial(polinomio_x(dcx_inicial))
     fin_x = polinomio_x(dcx_final) + cross_x(polinomio_y(dcy_final))
-    fin_y = polinomio_y(dcy_final) + cross_y(polinomio_x(dcx_final))
+    fin_y = polinomio_y(dcy_final) + cross_y_inicial(polinomio_x(dcx_final))
     
     # Imprimimos los límites físicos para debuguear y que veas por qué daba vacío
     print(f"Limites X [um]: {inicio_x:.3f} a {fin_x:.3f} (Paso: {paso_x})")
@@ -182,9 +196,10 @@ def recortar_bordes(dcx, dcy, desp_x, desp_y, n):
 # 3. EJECUCIÓN Y VALIDACIÓN (TEST)
 # ---------------------------------------------------------
 
-PASO_MICRONES_X = 0.05
+PASO_MICRONES_X = 0.1
 PASO_MICRONES_Y = 0.5 
-PUNTOS_A_RECORTAR = 2  # Acá definís cuántos puntos volás de cada borde
+PUNTOS_A_RECORTAR = 1 # Acá definís cuántos puntos volás de cada borde
+
 
 # 1. Calculamos la grilla completa
 dcx_calc, dcy_calc, obj_x, obj_y = desplazamientos(0.0, 0.0, 1.0, 1.0, paso_x=PASO_MICRONES_X,paso_y=PASO_MICRONES_Y)
@@ -205,13 +220,17 @@ y_verificacion = []
 for idx in range(len(dcx_calc)):
     x_val = dcx_calc[idx]
     y_val = dcy_calc[idx]
+
+    coef_cross_y_val  = [pendiente_cross_y(polinomio_y(y_val)),0]
+    cross_y_val = np.poly1d(coef_cross_y_val)
     
     # ACÁ: Mismo cambio, respetar el modelo físico
-    X_fisico = polinomio_x(x_val) - cross_x(polinomio_y(y_val))
-    Y_fisico = polinomio_y(y_val) + cross_y(polinomio_x(x_val))
+    X_fisico = polinomio_x(x_val) +  cross_x(polinomio_y(y_val))
+    Y_fisico = polinomio_y(y_val) + cross_y_val(polinomio_x(x_val))
     
     x_verificacion.append(X_fisico)
     y_verificacion.append(Y_fisico)
+
 
 # Graficamos
 plt.figure(figsize=(10, 5))
@@ -240,5 +259,5 @@ plt.tight_layout()
 plt.show()
 
 dutys_csv = pd.DataFrame({'Dcx': dcx_calc,'Dcy':dcy_calc})
-dutys_csv.to_csv(r'dutys_horax_csv4.csv')
+dutys_csv.to_csv(r'dutys_horax_correciony_1.csv')
 

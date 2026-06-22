@@ -8,14 +8,19 @@ import matplotlib.pyplot as plt
 
 #%%
 """Definimos los polinomios y coeficientes que vamos a usar"""
+file = 'calv2_1906'
 
-promedio_cross_x = [-0.03461811951503092,0] #La pendiente y una o.o en 0 para la función y = mx
-promedio_cross_y = [-0.07531236878047691,0] #La pendiente y una o.o en 0 para la función x = my
+datos_cross_x  = pd.read_csv(rf'Calibración\Nuevo_aproach\ajuste_lin_x_{file}.csv') 
+datos_cross_y  = pd.read_csv(rf'Calibración\Nuevo_aproach\ajuste_lin_y_{file}.csv') 
+
+promedio_cross_x = [datos_cross_x['m'].mean(),0]
+promedio_cross_y = [datos_cross_y['m'].mean(),0]
+
 m1 = promedio_cross_x[0]
 m2 = promedio_cross_y[0]
 
-datos_ajuste_x = pd.read_csv(r'Calibración\Nuevo_aproach\ajuste_cubico_x_calv2.csv') 
-datos_ajuste_y= pd.read_csv(r'Calibración\Nuevo_aproach\ajuste_cubico_y_calv2.csv')
+datos_ajuste_x = pd.read_csv(rf'Calibración\Nuevo_aproach\ajuste_cubico_x_{file}.csv') 
+datos_ajuste_y = pd.read_csv(rf'Calibración\Nuevo_aproach\ajuste_cubico_y_{file}.csv')
 
 promedio_x = datos_ajuste_x.mean()[1::] # Los datos de los ajustes para todas las filas de las no linealidades en la ida
 coefs_x = [coef for coef in promedio_x] # Coeficientes de V_x(x) = ax^3 + bx^2 + cx
@@ -57,16 +62,16 @@ def crear_dcs(x_0,y_0,x_f,y_f,pasos_x,pasos_y):
     return np.array(dcsx_grid), np.array(dcsy_grid)
 
 
-def recortar_bordes(dcx, dcy, desp_x, desp_y, n):
+def recortar_bordes(dcx, dcy, Nx, Ny, n):
     """
     Recorta 'n' puntos de los 4 bordes de la grilla de escaneo.
     """
-    Nx = len(desp_x)
-    Ny = len(desp_y)
+    # Nx = len(desp_x)
+    # Ny = len(desp_y)
     
     # Chequeo de seguridad: evitar recortar más puntos de los que existen
-    if 2*n >= Nx or 2*n >= Ny:
-        print('recorte demasiado grande')
+    # if 2*n >= Nx or 2*n >= Ny:
+    #     print('recorte demasiado grande')
 
     # 1. Transformamos las listas 1D en matrices 2D (Ny filas, Nx columnas)
     dcx_2d = np.array(dcx).reshape((Ny, Nx))
@@ -77,23 +82,23 @@ def recortar_bordes(dcx, dcy, desp_x, desp_y, n):
     dcy_crop = dcy_2d[n:-n, n:-n]
     
     # 3. Recortamos también los vectores físicos de referencia
-    desp_x_crop = desp_x[n:-n]
-    desp_y_crop = desp_y[n:-n]
+    # desp_x_crop = desp_x[n:-n]
+    # desp_y_crop = desp_y[n:-n]
     
     # 4. Volvemos a aplanar la matriz a una lista 1D para que el hardware la consuma
     dcx_final = dcx_crop.flatten().tolist()
     dcy_final = dcy_crop.flatten().tolist()
     
-    return dcx_final, dcy_final, desp_x_crop, desp_y_crop
+    return dcx_final, dcy_final
 
 #%%
 dcsx, dcsy = crear_dcs(0,0,12,12,30,30)
 
-dcx_calc, dcy_calc, _, _ = recortar_bordes(dcsx, dcsy, 30, 30, n=4)
+dcx_calc, dcy_calc = recortar_bordes(-dcsx, dcsy, 30, 30, n=4)
 
 #%%
 dutys_csv = pd.DataFrame({'Dcx': dcx_calc,'Dcy':dcy_calc})
 route = 'Dutys\Continuos'
-file = 'dutys_cont_v3_fede_csv'
+file = 'dutysv3_1906'
 dutys_csv.to_csv(rf'{route}\{file}.csv')
 # %%

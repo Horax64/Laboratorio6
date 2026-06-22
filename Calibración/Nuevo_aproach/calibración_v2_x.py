@@ -16,8 +16,8 @@ warnings.filterwarnings('error', category=np.exceptions.RankWarning)
 umppx = 0.025239
 #%%
 """Configuración de rutas y visualización de una fila."""
-
-trayectorias_path = r'Analisis de video\Datos_tray\Discreto_x_1805_proc.csv'
+file = 'Discreto_x_1906'
+trayectorias_path = fr'Analisis de video\Datos_tray\{file}_proc.csv'
 data = pd.read_csv(trayectorias_path)
 filas = data['fila'].unique()
 fila = 3
@@ -139,7 +139,7 @@ for fila in filas:
 Buscamos V_x = f(X_real) y lo ajustamos con un polinomio de grado 3.
 """
 
-cantidad_dcs = 21 #Es necesario tener en claro cuales fueron los dcs para cada punto.
+cantidad_dcs = 16 #Es necesario tener en claro cuales fueron los dcs para cada punto.
                   #Asumimos que mandamos un array equiespaciado
 ajustes_nolineal_x = []
 
@@ -152,7 +152,7 @@ for i,fila in enumerate(filas):
     x_mean, y_mean, x_std, y_std = promediar_clusters(x_track, y_track, umbral_x)
 
     if len(x_mean) == cantidad_dcs:
-        dc_x = range(0,65535,3276)
+        dc_x = np.linspace(0,65535,cantidad_dcs)
         dc_x = (1/65535)*np.array(dc_x)
 
         # Calibración de distancia

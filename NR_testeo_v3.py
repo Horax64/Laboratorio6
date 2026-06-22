@@ -72,7 +72,7 @@ def NewtonRaphsonIndividual(dc_x_guess, dc_y_guess, X, Y):
     
     # NUEVO CÁLCULO ESTRICTO DE LA DERIVADA
     derivada_m_cy = d_pendiente_cross_y(Py) 
-    dFydy = dPy + (Px * derivada_m_cy * dPy)
+    dFydy = dPy 
     det_J = dFxdx * dFydy - dFxdy * dFydx
     
     if abs(det_J) < 1e-12:

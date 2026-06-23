@@ -9,8 +9,8 @@ np.set_printoptions(suppress=True)
 # 1. CARGA Y DEFINICIÓN DEL MODELO DIRECTO
 # ---------------------------------------------------------
 
-promedio_cross_y = [-0.03461811951503092, 0]
-promedio_cross_x = [-0.07531236878047691, 0]
+promedio_cross_x = [-0.03461811951503092, 0]
+promedio_cross_y = [-0.06852970480292754, 0]
 
 # Intenta leer tus datos de ajuste. 
 # Al usar poly1d, si las columnas de promedio_x tienen 4 elementos, arma grado 3 solo.
@@ -178,10 +178,10 @@ def recortar_bordes(dcx, dcy, desp_x, desp_y, n,m):
 # 3. EJECUCIÓN Y VALIDACIÓN (TEST)
 # ---------------------------------------------------------
 
-PASO_MICRONES_X = 0.05
-PASO_MICRONES_Y = 0.05
-PUNTOS_A_RECORTAR_X = 20
-PUNTOS_A_RECORTAR_Y = 20  # Acá definís cuántos puntos volás de cada borde
+PASO_MICRONES_X = 0.5
+PASO_MICRONES_Y = 0.5
+PUNTOS_A_RECORTAR_X = 3
+PUNTOS_A_RECORTAR_Y = 2  # Acá definís cuántos puntos volás de cada borde
 
 
 # 1. Calculamos la grilla completa
@@ -241,5 +241,5 @@ dutys_csv = pd.DataFrame({'Dcx': dcx_calc,'Dcy':dcy_calc})
 hora = time.strftime("%d%m_%H%M")
 print(type(hora))
 
-dutys_csv.to_csv(fr'dutys_barrido_continuoxy_{hora}.csv')
+dutys_csv.to_csv(fr'dutys_barrido_discreto_x_{hora}.csv')
 

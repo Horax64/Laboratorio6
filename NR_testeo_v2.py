@@ -154,8 +154,8 @@ def recortar_bordes(dcx, dcy, desp_x, desp_y, n,m):
     dcy_2d = np.array(dcy).reshape((Ny, Nx))
     
     # 2. Rebanamos la matriz: sacamos 'n' filas y 'n' columnas de cada extremo
-    dcx_crop = dcx_2d[n:-n, m:-m]
-    dcy_crop = dcy_2d[n:-n, m:-m]
+    dcx_crop = dcx_2d[m:-m, n:-n]
+    dcy_crop = dcy_2d[m:-m, n:-n]
     
     # 3. Recortamos también los vectores físicos de referencia
     desp_x_crop = desp_x[n:-n]
@@ -178,9 +178,9 @@ def recortar_bordes(dcx, dcy, desp_x, desp_y, n,m):
 # 3. EJECUCIÓN Y VALIDACIÓN (TEST)
 # ---------------------------------------------------------
 
-PASO_MICRONES_X = 0.5
+PASO_MICRONES_X = 0.05
 PASO_MICRONES_Y = 0.5
-PUNTOS_A_RECORTAR_X = 3
+PUNTOS_A_RECORTAR_X = 20
 PUNTOS_A_RECORTAR_Y = 2  # Acá definís cuántos puntos volás de cada borde
 
 
@@ -238,8 +238,8 @@ plt.tight_layout()
 plt.show()
 
 dutys_csv = pd.DataFrame({'Dcx': dcx_calc,'Dcy':dcy_calc})
-hora = time.ctime()
+hora = time.strftime("%d%m_%H%M")
 print(type(hora))
 
-dutys_csv.to_csv(fr'dutys_barrido_testeo_2306.csv')
+dutys_csv.to_csv(fr'dutys_barrido_testeo_{hora}.csv')
 

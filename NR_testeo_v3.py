@@ -197,7 +197,7 @@ def recortar_bordes(dcx, dcy, desp_x, desp_y, n):
 # ---------------------------------------------------------
 
 PASO_MICRONES_X = 0.05
-PASO_MICRONES_Y = 0.05
+PASO_MICRONES_Y = 0.5
 PUNTOS_A_RECORTAR = 10 # Acá definís cuántos puntos volás de cada borde
 
 

@@ -179,9 +179,9 @@ def recortar_bordes(dcx, dcy, desp_x, desp_y, n,m):
 # ---------------------------------------------------------
 
 PASO_MICRONES_X = 0.05
-PASO_MICRONES_Y = 0.5
+PASO_MICRONES_Y = 0.05
 PUNTOS_A_RECORTAR_X = 20
-PUNTOS_A_RECORTAR_Y = 2  # Acá definís cuántos puntos volás de cada borde
+PUNTOS_A_RECORTAR_Y = 20  # Acá definís cuántos puntos volás de cada borde
 
 
 # 1. Calculamos la grilla completa
@@ -241,5 +241,5 @@ dutys_csv = pd.DataFrame({'Dcx': dcx_calc,'Dcy':dcy_calc})
 hora = time.strftime("%d%m_%H%M")
 print(type(hora))
 
-dutys_csv.to_csv(fr'dutys_barrido_testeo_{hora}.csv')
+dutys_csv.to_csv(fr'dutys_barrido_continuoxy_{hora}.csv')
 

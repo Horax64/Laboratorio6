@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
+import time
 # Desactivar notación científica en numpy para leer más fácil
 np.set_printoptions(suppress=True)
 
@@ -12,24 +12,19 @@ np.set_printoptions(suppress=True)
 promedio_cross_y = [-0.03461811951503092, 0]
 promedio_cross_x = [-0.07531236878047691, 0]
 
-try:
-    # Intenta leer tus datos de ajuste. 
-    # Al usar poly1d, si las columnas de promedio_x tienen 4 elementos, arma grado 3 solo.
-    datos_ajuste_x = pd.read_csv('ajuste_cubico_x.csv') 
-    datos_ajuste_y = pd.read_csv('ajuste_cubico_y.csv')
+# Intenta leer tus datos de ajuste. 
+# Al usar poly1d, si las columnas de promedio_x tienen 4 elementos, arma grado 3 solo.
+datos_ajuste_x = pd.read_csv(r'Calibración\Aproach_NR\ajuste_cubico_x_calv1_1906.csv') 
+datos_ajuste_y = pd.read_csv(r'Calibración\Aproach_NR\ajuste_cubico_y_calv1_1906.csv')
 
-    promedio_x = datos_ajuste_x.mean()[1::]
-    coefs_x = [coef for coef in promedio_x] 
-    coefs_x[-1] = 0
+promedio_x = datos_ajuste_x.mean()[1::]
+coefs_x = [coef for coef in promedio_x] 
+coefs_x[-1] = 0
 
-    promedio_y = datos_ajuste_y.mean()[1::]
-    coefs_y = [coef for coef in promedio_y] 
-    coefs_y[-1] = 0
-except FileNotFoundError:
-    print("No se encontraron los CSV. Usando coeficientes cúbicos de prueba...")
-    # Coeficientes dummy si no tenés los CSV a mano (para que el código corra igual)
-    coefs_x = [2.0, -0.5, 4.0, 0.0]  # Px(x)
-    coefs_y = [1.8, -0.4, 3.8, 0.0]  # Py(y)
+promedio_y = datos_ajuste_y.mean()[1::]
+coefs_y = [coef for coef in promedio_y] 
+coefs_y[-1] = 0
+
 
 cross_x = np.poly1d(promedio_cross_x)
 cross_y = np.poly1d(promedio_cross_y)
@@ -105,6 +100,7 @@ def desplazamientos(dcx_inicial, dcy_inicial, dcx_final, dcy_final, paso_x, paso
     inicio_y = polinomio_y(dcy_inicial) + cross_y(polinomio_x(dcx_inicial))
     fin_x = polinomio_x(dcx_final) + cross_x(polinomio_y(dcy_final))
     fin_y = polinomio_y(dcy_final) + cross_y(polinomio_x(dcx_final))
+
     
     # Imprimimos los límites físicos para debuguear y que veas por qué daba vacío
     print(f"Limites X [um]: {inicio_x:.3f} a {fin_x:.3f} (Paso: {paso_x})")
@@ -141,7 +137,7 @@ def desplazamientos(dcx_inicial, dcy_inicial, dcx_final, dcy_final, paso_x, paso
 
     return dcx, dcy, desp_x, desp_y
 
-def recortar_bordes(dcx, dcy, desp_x, desp_y, n):
+def recortar_bordes(dcx, dcy, desp_x, desp_y, n,m):
     """
     Recorta 'n' puntos de los 4 bordes de la grilla de escaneo.
     """
@@ -149,8 +145,8 @@ def recortar_bordes(dcx, dcy, desp_x, desp_y, n):
     Ny = len(desp_y)
     
     # Chequeo de seguridad: evitar recortar más puntos de los que existen
-    if 2*n >= Nx or 2*n >= Ny:
-        print("¡Pará, Horax! El margen 'n' es muy grande para esta grilla. Te quedás sin puntos.")
+    if 2*n >= Nx or 2*m >= Ny:
+        print("El margen es muy grande para esta grilla. Te quedás sin puntos.")
         return dcx, dcy, desp_x, desp_y
         
     # 1. Transformamos las listas 1D en matrices 2D (Ny filas, Nx columnas)
@@ -158,12 +154,12 @@ def recortar_bordes(dcx, dcy, desp_x, desp_y, n):
     dcy_2d = np.array(dcy).reshape((Ny, Nx))
     
     # 2. Rebanamos la matriz: sacamos 'n' filas y 'n' columnas de cada extremo
-    dcx_crop = dcx_2d[n:-n, n:-n]
-    dcy_crop = dcy_2d[n:-n, n:-n]
+    dcx_crop = dcx_2d[n:-n, m:-m]
+    dcy_crop = dcy_2d[n:-n, m:-m]
     
     # 3. Recortamos también los vectores físicos de referencia
     desp_x_crop = desp_x[n:-n]
-    desp_y_crop = desp_y[n:-n]
+    desp_y_crop = desp_y[m:-m]
     
     # 4. Volvemos a aplanar la matriz a una lista 1D para que el hardware la consuma
     dcx_final = dcx_crop.flatten().tolist()
@@ -182,16 +178,18 @@ def recortar_bordes(dcx, dcy, desp_x, desp_y, n):
 # 3. EJECUCIÓN Y VALIDACIÓN (TEST)
 # ---------------------------------------------------------
 
-PASO_MICRONES_X = 0.05
-PASO_MICRONES_Y = 0.5 
-PUNTOS_A_RECORTAR = 2  # Acá definís cuántos puntos volás de cada borde
+PASO_MICRONES_X = 0.5
+PASO_MICRONES_Y = 0.5
+PUNTOS_A_RECORTAR_X = 3
+PUNTOS_A_RECORTAR_Y = 2  # Acá definís cuántos puntos volás de cada borde
+
 
 # 1. Calculamos la grilla completa
 dcx_calc, dcy_calc, obj_x, obj_y = desplazamientos(0.0, 0.0, 1.0, 1.0, paso_x=PASO_MICRONES_X,paso_y=PASO_MICRONES_Y)
 print(f"Puntos originales: {len(dcx_calc)}")
 
 # 2. Aplicamos el recorte de los bordes
-dcx_calc, dcy_calc, obj_x, obj_y = recortar_bordes(dcx_calc, dcy_calc, obj_x, obj_y, n=PUNTOS_A_RECORTAR)
+dcx_calc, dcy_calc, obj_x, obj_y = recortar_bordes(dcx_calc, dcy_calc, obj_x, obj_y, n=PUNTOS_A_RECORTAR_X,m=PUNTOS_A_RECORTAR_Y)
 print(f"Puntos después del recorte: {len(dcx_calc)}")
 
 # --- PRUEBA DE CINEMÁTICA DIRECTA ---
@@ -207,7 +205,7 @@ for idx in range(len(dcx_calc)):
     y_val = dcy_calc[idx]
     
     # ACÁ: Mismo cambio, respetar el modelo físico
-    X_fisico = polinomio_x(x_val) - cross_x(polinomio_y(y_val))
+    X_fisico = polinomio_x(x_val) + cross_x(polinomio_y(y_val))
     Y_fisico = polinomio_y(y_val) + cross_y(polinomio_x(x_val))
     
     x_verificacion.append(X_fisico)
@@ -240,5 +238,8 @@ plt.tight_layout()
 plt.show()
 
 dutys_csv = pd.DataFrame({'Dcx': dcx_calc,'Dcy':dcy_calc})
-dutys_csv.to_csv(r'dutys_horax_csv4.csv')
+hora = time.ctime()
+print(type(hora))
+
+dutys_csv.to_csv(fr'dutys_barrido_testeo_2306.csv')
 

@@ -196,9 +196,9 @@ def recortar_bordes(dcx, dcy, desp_x, desp_y, n):
 # 3. EJECUCIÓN Y VALIDACIÓN (TEST)
 # ---------------------------------------------------------
 
-PASO_MICRONES_X = 0.1
-PASO_MICRONES_Y = 0.5 
-PUNTOS_A_RECORTAR = 1 # Acá definís cuántos puntos volás de cada borde
+PASO_MICRONES_X = 0.05
+PASO_MICRONES_Y = 0.05
+PUNTOS_A_RECORTAR = 10 # Acá definís cuántos puntos volás de cada borde
 
 
 # 1. Calculamos la grilla completa

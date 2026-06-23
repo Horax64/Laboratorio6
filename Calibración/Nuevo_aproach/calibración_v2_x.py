@@ -16,20 +16,20 @@ warnings.filterwarnings('error', category=np.exceptions.RankWarning)
 umppx = 0.025239
 #%%
 """Configuración de rutas y visualización de una fila."""
-file = 'Discreto_x_1906'
+file = 'Discreto_auxiliar_2206'
 trayectorias_path = fr'Analisis de video\Datos_tray\{file}_proc.csv'
 data = pd.read_csv(trayectorias_path)
 filas = data['fila'].unique()
-fila = 3
 
-x_1 = data[data['fila']==filas[fila]]['X']
-y_1 = data[data['fila']==filas[fila]]['Y']
-
-plt.scatter(x_1,y_1)
-plt.xlabel('x [px]')
-plt.ylabel('y [px]')
-plt.title(f'Barrido cross-talk discreto (fila {fila})')
-plt.show()
+for fila in filas: 
+    x_1 = data[data['fila']==filas[fila]]['X']
+    y_1 = data[data['fila']==filas[fila]]['Y']
+    
+    plt.scatter(x_1,y_1)
+    plt.xlabel('x [px]')
+    plt.ylabel('y [px]')
+    plt.title(f'Barrido cross-talk discreto (fila {fila})')
+    plt.show()
 
 #%%
 """Ajuste de cross-talk entre ejes.
@@ -42,29 +42,51 @@ def lineal(x,a,b):
 ajustes_lineal_x = []
 pendientes = []
 ordenadas = []
+promedio_y = []
+
 
 for i,fila in enumerate(filas):
-    mask = data['fila'] == fila
-    x_traj = data[mask]['X'].values  
-    y_traj = data[mask]['Y'].values
+    if fila not in [1,3,13,14]:
+        mask = data['fila'] == fila
+        x_traj = data[mask]['X'].values  
+        y_traj = data[mask]['Y'].values
+        
+        popt, pcov = curve_fit(lineal,x_traj,y_traj,p0=[1,0])
+        ajustes_lineal_x.append([i,popt[0],popt[1]])
+        
+        posicion_y_promedio = np.mean(y_traj)
+        promedio_y.append(posicion_y_promedio)
+        
+        #Visualización del ajuste lineal
+        plt.title(f'Ajuste lineal para la fila {i}')
+        plt.scatter(x_traj,y_traj)
+        puntos_graf = np.linspace(min(x_traj),max(x_traj),1000)
+        plt.plot(np.linspace(min(x_traj),max(x_traj),1000),lineal(puntos_graf,*popt))
+        plt.show()
 
-    popt, pcov = curve_fit(lineal,x_traj,y_traj,p0=[1,0])
-    ajustes_lineal_x.append([i,popt[0],popt[1]])
+# Si queremos podemos visualizar la distribución de las pendientes halladas para todas las filas
 
-    ## Visualización del ajuste lineal
-    # plt.title(f'Ajuste lineal para la fila {i}')
-    # plt.scatter(x_traj,y_traj)
-    # puntos_graf = np.linspace(min(x_traj),max(x_traj),1000)
-    # plt.plot(np.linspace(min(x_traj),max(x_traj),1000),lineal(puntos_graf,*popt))
-    # plt.show()
+ajustes_array = np.array(ajustes_lineal_x)
+print(ajustes_array)
+print(promedio_y)
+posicion_y = (promedio_y - promedio_y[0])*umppx
+pendiente = ajustes_array[:,1]
+# Ajustamos las pendientes a lo largo de y: 
+coeficientes_cross = np.polyfit(posicion_y,pendiente,2)
 
-## Si queremos podemos visualizar la distribución de las pendientes halladas para todas las filas
+def ajuste_cross(x):
+    return coeficientes_cross[0]*x**2+coeficientes_cross[1]*x + coeficientes_cross[2]
 
-# ajustes_array = np.array(ajustes_lineal_x)
-# pendiente = ajustes_array[:,1]
-# ordenadas = ajustes_array[:,2]
-# pendiente_promedio = np.mean(pendientes)
-# ordenada_promedio = np.mean(ordenadas)
+y = np.linspace(0,12,10000)
+#plt.plot(y,ajuste_cross(y),color='r')
+plt.scatter(posicion_y,pendiente)
+plt.grid(True)
+plt.xlabel(r'Posición en y [$\mathrm{\mu m}$]')
+plt.ylabel('Pendiente del ajuste del cross talk')
+plt.show()
+
+print(coeficientes_cross)
+
 
 # print(f'La pendiente promedio es: {pendiente_promedio}')
 # plt.title('Distribución de pendientes')

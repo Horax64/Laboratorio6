@@ -53,6 +53,7 @@ for i,fila in enumerate(filas):
         
         popt, pcov = curve_fit(lineal,x_traj,y_traj,p0=[1,0])
         ajustes_lineal_x.append([i,popt[0],popt[1]])
+        pendientes.append(popt[0])
         
         posicion_y_promedio = np.mean(y_traj)
         promedio_y.append(posicion_y_promedio)
@@ -67,6 +68,7 @@ for i,fila in enumerate(filas):
 # Si queremos podemos visualizar la distribución de las pendientes halladas para todas las filas
 
 ajustes_array = np.array(ajustes_lineal_x)
+pendiente_promedio = np.mean(pendientes)
 print(ajustes_array)
 print(promedio_y)
 posicion_y = (promedio_y - promedio_y[0])*umppx
@@ -88,11 +90,11 @@ plt.show()
 print(coeficientes_cross)
 
 
-# print(f'La pendiente promedio es: {pendiente_promedio}')
-# plt.title('Distribución de pendientes')
-# plt.hist(pendientes)
-# plt.xlabel('Pendiente (px/px)')
-# plt.show()
+print(f'La pendiente promedio es: {pendiente_promedio}')
+plt.title('Distribución de pendientes')
+plt.hist(pendientes)
+plt.xlabel('Pendiente (px/px)')
+plt.show()
 
 #%%
 """Código para promediar los clusters obtenidos en el barrido discreto y obtener puntos relacionados con cada duty cycle
@@ -145,16 +147,16 @@ for fila in filas:
     x_mean, y_mean, x_std, y_std = promediar_clusters(x_track, y_track, umbral_x)
 
     # # Visualización rápida para ver que hacemos en cada fila
-    # plt.figure(figsize=(8, 6))
-    # plt.scatter(x_track, y_track, color='gray', alpha=0.3, label='Tracking crudo')
-    # plt.errorbar(x_mean, y_mean, xerr=x_std, yerr=y_std, fmt='ro', 
-    #             capsize=3, label='Centroides (promedio)')
-    # plt.xlabel('Desplazamiento X')
-    # plt.ylabel('Desplazamiento Y')
-    # plt.title(f'Promediado de Clústers de Tracking {fila}')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.show()
+    plt.figure(figsize=(8, 6))
+    plt.scatter(x_track, y_track, color='gray', alpha=0.3, label='Tracking crudo')
+    plt.errorbar(x_mean, y_mean, xerr=x_std, yerr=y_std, fmt='ro', 
+                capsize=3, label='Centroides (promedio)')
+    plt.xlabel('Desplazamiento X')
+    plt.ylabel('Desplazamiento Y')
+    plt.title(f'Promediado de Clústers de Tracking Fila {fila}')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 #%%
 
 """Ajustes de las no linealidades en x para cada fila.
@@ -164,6 +166,7 @@ Buscamos V_x = f(X_real) y lo ajustamos con un polinomio de grado 3.
 cantidad_dcs = 16 #Es necesario tener en claro cuales fueron los dcs para cada punto.
                   #Asumimos que mandamos un array equiespaciado
 ajustes_nolineal_x = []
+
 
 for i,fila in enumerate(filas):
     x_track = data[data['fila']==fila]['X']- np.min(data[data['fila']==fila]['X'])
@@ -204,7 +207,7 @@ filas_nolin = [[numero] + list(array) for numero, array in ajustes_nolineal_x]
 # Coeficientes del polinomio: dc_x = a*x^3 + b*x^2 + c*x +d; dónde dc_x norm. y, x en um
 df_nolin = pd.DataFrame(filas_nolin)
 df_nolin.columns = ['Fila', 'a', 'b', 'c','d']
-df_nolin.to_csv('ajuste_cubico_x_calv2.csv', index=False)
+df_nolin.to_csv('ajuste_cubico_x_cal_2206.csv', index=False)
 
 #%%
 

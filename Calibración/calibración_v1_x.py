@@ -19,7 +19,7 @@ umppx = 0.025239
 #  Configuración de rutas y visualización de una fila.
 #-------------------------------------------------------
 
-file = 'Discreto_x_1906'
+file = 'Calibracion_3006_x'
 trayectorias_path = fr'Analisis de video\Datos_tray\{file}_proc.csv'
 data = pd.read_csv(trayectorias_path)
 filas = data['fila'].unique()
@@ -142,7 +142,7 @@ for fila in filas:
 Buscamos V_x = f(X_real) y lo ajustamos con un polinomio de grado 3.
 """
 
-cantidad_dcs = 16 #Es necesario tener en claro cuales fueron los dcs para cada punto.
+cantidad_dcs =  18#Es necesario tener en claro cuales fueron los dcs para cada fila.
                   #Asumimos que mandamos un array equiespaciado
 ajustes_nolineal_x = []
 
@@ -150,7 +150,7 @@ for i,fila in enumerate(filas):
     x_track = data[data['fila']==fila]['X']
     y_track = data[data['fila']==fila]['Y']
 
-    umbral_x = 1  # Umbral en pixeles para separar clusters (mucho mayor al "ruido" del tracker)
+    umbral_x = 6  # Umbral en pixeles para separar clusters (mucho mayor al "ruido" del tracker)
 
     x_mean, y_mean, x_std, y_std = promediar_clusters(x_track, y_track, umbral_x)
 

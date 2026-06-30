@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd 
 
 #%%
-file = 'Discreto_auxiliar_2206'
+file = 'Calibracion_3006_x'
 trayectorias_path = fr'Analisis de video\Datos_tray\{file}.csv'
 data = pd.read_csv(trayectorias_path)
 dc_y = range(0,65535,3276)

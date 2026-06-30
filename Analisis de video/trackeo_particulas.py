@@ -1,17 +1,31 @@
-#%%
-# -*- coding: utf-8 -*-
+# Importación de librerías
 from trackerclass_v4 import tracker
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import cv2 as cv
+from tkinter import filedialog
+from pathlib import Path
 
-file_name = 'Discreto_auxiliar_2206' 
+ruta_archivo = Path(filedialog.askopenfilename(
+    title="Abrir video a trackear",
+    defaultextension=".mp4",
+    initialdir=Path.home(),        
+    filetypes=[("MP4","*.mp4*"),("All files", "*.*")]
+))
 
-#%%
+if not ruta_archivo:
+    print("No se seleccionó ningún archivo. Saliendo.")
+    exit()
+
+video = ruta_archivo.name 
+nombre_video = ruta_archivo.stem   
+ruta_video = ruta_archivo.parent        
+
+
 # 1. Configuración de rutas y parámetros
 
-video_path = rf'C:\Users\LEC\Desktop\Garcia Crespo-Arias Ceci\Análisis de vídeo\{file_name}.mp4'
+video_path = rf'{ruta_video}\{video}'
 fps = tracker.fps(video_path)
 
 # Extraemos el número total de frames del video para controlar el final real
@@ -20,11 +34,12 @@ total_frames = int(cap_temp.get(cv.CAP_PROP_FRAME_COUNT))
 cap_temp.release()
 t_inicio = 0
 
-# Parámetros del experimento
+# Parámetros del trackeo
 frame_actual = int(fps * t_inicio) 
 ancho_busqueda = [50, 50]    
 velocidad_visualizacion = 1  
 
+# Inicializamos dataframe para los datos obtenidos del trackeo
 df_trayectoria = pd.DataFrame()
 
 print(f"Iniciando procesamiento continuo. Total de frames del video: {total_frames}")
@@ -64,7 +79,7 @@ while frame_actual < total_frames:
             
             df_trayectoria = pd.concat([df_trayectoria, df_segmento], ignore_index=True)
             # Guardado preventivo por tramos (si se rompe el programa, conservas todo lo anterior)
-            df_trayectoria.to_csv(f'{file_name}.csv', index=False)  
+            df_trayectoria.to_csv(f'{nombre_video}.csv', index=False)  
 
         if not salto_detectado:
             print("\nSe ha alcanzado el final del video o el usuario canceló.")
@@ -77,23 +92,25 @@ while frame_actual < total_frames:
         print(f"\n[!] Interrupción en el procesamiento: {e}")
         break
 
-# Finalizado el bucle, guardamos el dataframe global definitivo
+# Finalizado el bucle, guardamos el dataframe global definitivo en el .csv
 if not df_trayectoria.empty:
-    df_trayectoria.to_csv(f'Analisis de video\{file_name}.csv', index=False)
-    print(f"\nProceso finalizado con éxito. Datos guardados en {file_name}.csv")
-
-#%% 
-    df_trayectoria = pd.read_csv(fr'C:\Users\LEC\Desktop\Laboratorio6\Analisis de video\{file_name}.csv')
-    # 5. Visualización de resultados con Matplotlib (Muestra todo el barrido continuo concatenado)
-    plt.figure(figsize=(9, 7))
-    plt.scatter(df_trayectoria['X'], df_trayectoria['Y'], label='Trayectoria global unificada', color='b', alpha=0.6)
-    plt.gca().invert_yaxis() 
-    plt.xlabel("X (píxeles)")
-    plt.ylabel("Y (píxeles)")
-    plt.title("Trayectoria completa recuperada (Multi-barrido)")
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.5)
-    plt.show()
-#else:
+    df_trayectoria.to_csv(f'Analisis de video\Datos_tray\{nombre_video}.csv', index=False)
+    print(f"\nProceso finalizado con éxito. Datos guardados en {nombre_video}.csv")
+else:
     print("\nNo se registraron datos en la trayectoria.")
-# %%
+
+# Leemos los datos obtenidos y los graficamos
+df_trayectoria = pd.read_csv(fr'Analisis de video\Datos_tray\{nombre_video}.csv')
+
+#Visualización de resultados con Matplotlib (Muestra todo el barrido)
+plt.figure(figsize=(9, 7))
+plt.scatter(df_trayectoria['X'], df_trayectoria['Y'], label='Trayectoria global unificada', color='b', alpha=0.6)
+plt.gca().invert_yaxis() 
+plt.xlabel("X (píxeles)")
+plt.ylabel("Y (píxeles)")
+plt.title("Trayectoria del barrido")
+plt.legend()
+plt.grid(True, linestyle='--', alpha=0.5)
+plt.show()
+
+

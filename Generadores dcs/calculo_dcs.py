@@ -9,13 +9,17 @@ np.set_printoptions(suppress=True)
 # 1. CARGA Y DEFINICIÓN DEL MODELO DIRECTO
 # ---------------------------------------------------------
 
-promedio_cross_x = [-0.03461811951503092, 0]
-promedio_cross_y = [-0.06852970480292754, 0]
+promedio_cross_x = pd.read_csv(r'Calibración\Datos_ajuste\ajuste_lin_x_calv1_3006.csv')
+promedio_cross_y = pd.read_csv(r'Calibración\Datos_ajuste\ajuste_lin_y_calv1_3006.csv')
+promedio_cross_x = promedio_cross_x[5:] #Los primeros datos son outliers
+
+promedio_cross_x = [promedio_cross_x['m'].mean(), 0]
+promedio_cross_y = [promedio_cross_y['m'], 0]
 
 # Intenta leer tus datos de ajuste. 
 # Al usar poly1d, si las columnas de promedio_x tienen 4 elementos, arma grado 3 solo.
-datos_ajuste_x = pd.read_csv(r'Calibración\Aproach_NR\ajuste_cubico_x_calv1_1906.csv') 
-datos_ajuste_y = pd.read_csv(r'Calibración\Aproach_NR\ajuste_cubico_y_calv1_1906.csv')
+datos_ajuste_x = pd.read_csv(r'Calibración\Datos_ajuste\ajuste_cubico_x_calv1_3006.csv') 
+datos_ajuste_y = pd.read_csv(r'Calibración\Datos_ajuste\ajuste_cubico_y_calv1_3006.csv')
 
 promedio_x = datos_ajuste_x.mean()[1::]
 coefs_x = [coef for coef in promedio_x] 

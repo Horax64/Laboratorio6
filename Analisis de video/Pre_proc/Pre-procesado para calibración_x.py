@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import pandas as pd 
 
 #%%
-file = 'Calibracion_3006_x'
-trayectorias_path = fr'Analisis de video\Datos_tray\{file}.csv'
+file = 'Calibracion_x_0107'
+trayectorias_path = fr'Analisis de video\Datos_tray\Datos_crudos\{file}.csv'
 data = pd.read_csv(trayectorias_path)
 dc_y = range(0,65535,3276)
 dc_x = range(0,65535,3276)
@@ -80,6 +80,6 @@ plt.show()
 # plt.show()
 #%%
 #Por ahora parece estar funcionando de forma más que adecuada, vamos a guardar los datos
-data.to_csv(rf'Analisis de video\Datos_tray\{file}_proc.csv', index=False)  
+data.to_csv(rf'Analisis de video\Datos_tray\Datos_procesados\{file}_proc.csv', index=False)  
 
 # %%

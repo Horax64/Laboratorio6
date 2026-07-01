@@ -18,9 +18,10 @@ umppx = 0.025239
 #-------------------------------------------------------
 #  Configuración de rutas y visualización de una fila.
 #-------------------------------------------------------
+fecha = '0107'
 
-file = 'Calibracion_3006_x'
-trayectorias_path = fr'Analisis de video\Datos_tray\{file}_proc.csv'
+file = f'Calibracion_x_{fecha}'
+trayectorias_path = fr'Analisis de video\Datos_tray\Datos_procesados\{file}_proc.csv'
 data = pd.read_csv(trayectorias_path)
 filas = data['fila'].unique()
 fila = 3
@@ -167,13 +168,13 @@ for i,fila in enumerate(filas):
         pol = np.poly1d(coef)
 
         #Visualización para cada fila        
-        plt.plot(dc_x,pol(dc_x),'r',label='Ajuste polinomio grado 3')
-        plt.scatter(dc_x,x_mean) #Corregir!!!
-        plt.title('No linealidades ida x (dc_x vs x)')
-        plt.xlabel('Duty cycle (Norm)')
-        plt.ylabel('x[px]')
-        plt.grid(True) 
-        plt.show()
+        # plt.plot(dc_x,pol(dc_x),'r',label='Ajuste polinomio grado 3')
+        # plt.scatter(dc_x,x_mean) #Corregir!!!
+        # plt.title('No linealidades ida x (dc_x vs x)')
+        # plt.xlabel('Duty cycle (Norm)')
+        # plt.ylabel('x[px]')
+        # plt.grid(True) 
+        # plt.show()
 #%%
 """Guardado de coieficientes.
 Guardamos los datos que conseguimos en un csv para las filas en las
@@ -186,12 +187,12 @@ filas_nolin = [[numero] + list(array) for numero, array in ajustes_nolineal_x]
 # Coeficientes del polinomio: dc_x = a*x^3 + b*x^2 + c*x +d; dónde dc_x norm. y, x en um
 df_nolin = pd.DataFrame(filas_nolin)
 df_nolin.columns = ['Fila', 'a', 'b', 'c','d']
-df_nolin.to_csv('ajuste_cubico_x_calv1_1606.csv', index=False)
+df_nolin.to_csv(r'Calibración\Datos_ajuste\ajuste_cubico_x_calv1_0107.csv', index=False)
 
 # Coeficientes del ajuste lineal: y = m*x + b; dónde x, y en px
 filas_lin = [[numero,m,b]  for numero, m, b in ajustes_lineal_x]
 df_lin = pd.DataFrame(filas_lin)
 df_lin.columns = ['Fila', 'm', 'b']
-df_lin.to_csv('ajuste_lin_x_calv1_1606.csv', index=False)
+df_lin.to_csv(r'Calibración\Datos_ajuste\ajuste_lin_x_calv1_0107.csv', index=False)
 
 # %%

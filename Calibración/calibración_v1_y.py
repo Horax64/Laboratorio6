@@ -16,9 +16,10 @@ warnings.filterwarnings('error', category=np.exceptions.RankWarning)
 umppx = 0.025239
 #%%
 """Configuración de rutas y visualización de una columna."""
+fecha ='0107'
 
-file = 'Calibracion_y_1906'
-trayectorias_path = fr'Analisis de video\Datos_tray\{file}_proc.csv'
+file = f'Calibracion_y_{fecha}'
+trayectorias_path = fr'Analisis de video\Datos_tray\Datos_procesados\{file}_proc.csv'
 data = pd.read_csv(trayectorias_path)
 columnas = data['columna'].unique()
 col = 3
@@ -119,11 +120,11 @@ for col in columnas:
     x_track = data[data['columna']==col]['X']
     y_track = data[data['columna']==col]['Y']
 
-    umbral_x = 1  # Umbral en pixeles para separar clusters (mucho mayor al "ruido" del tracker)
+    umbral_x = 2  # Umbral en pixeles para separar clusters (mucho mayor al "ruido" del tracker)
 
     x_mean, y_mean, x_std, y_std = promediar_clusters(x_track, y_track, umbral_x)
 
-    # Visualización rápida para ver que hacemos en cada columna
+    #Visualización rápida para ver que hacemos en cada columna
     # plt.figure(figsize=(8, 6))
     # plt.scatter(x_track, y_track, color='gray', alpha=0.3, label='Tracking crudo')
     # plt.errorbar(x_mean, y_mean, xerr=x_std, yerr=y_std, fmt='ro', 
@@ -140,7 +141,7 @@ for col in columnas:
 Buscamos V_x = f(X_real) y lo ajustamos con un polinomio de grado 3.
 """
 
-cantidad_dcs = 16 #Es necesario tener en claro cuales fueron los dcs para cada punto.
+cantidad_dcs = 18 #Es necesario tener en claro cuales fueron los dcs para cada punto.
                   #Asumimos que mandamos un array equiespaciado
 ajustes_nolineal_y = []
 
@@ -148,7 +149,7 @@ for i,col in enumerate(columnas):
     x_track = data[data['columna']==col]['X']
     y_track = data[data['columna']==col]['Y']
 
-    umbral_x = 1  # Umbral en pixeles para separar clusters (mucho mayor al "ruido" del tracker)
+    umbral_x = 2  # Umbral en pixeles para separar clusters (mucho mayor al "ruido" del tracker)
 
     x_mean, y_mean, x_std, y_std = promediar_clusters(x_track, y_track, umbral_x)
 
@@ -163,14 +164,14 @@ for i,col in enumerate(columnas):
         ajustes_nolineal_y.append([i,coef])
 
         #Visualización para cada columna        
-        pol = np.poly1d(coef)
-        plt.plot(dc_y,pol(dc_y),'r',label='Ajuste polinomio grado 3')
-        plt.scatter(dc_y,y_mean)
-        plt.title('No linealidades ida y (y vs dc_y)')
-        plt.xlabel('Duty cycle (Norm)')
-        plt.ylabel('y[px]')
-        plt.grid(True) 
-        plt.show()
+        # pol = np.poly1d(coef)
+        # plt.plot(dc_y,pol(dc_y),'r',label='Ajuste polinomio grado 3')
+        # plt.scatter(dc_y,y_mean)
+        # plt.title('No linealidades ida y (y vs dc_y)')
+        # plt.xlabel('Duty cycle (Norm)')
+        # plt.ylabel('y[px]')
+        # plt.grid(True) 
+        # plt.show()
 #%%
 """Guardado de coieficientes.
 Guardamos los datos que conseguimos en un csv para las columnas en las
@@ -182,11 +183,11 @@ columnas_nolin = [[numero] + list(array) for numero, array in ajustes_nolineal_y
 
 # Coeficientes del polinomio: dc_y = a*y^3 + b*y^2 + c*y +d; dónde dc_y norm. y, x en um
 df_nolin = pd.DataFrame(columnas_nolin)
-df_nolin.columns = ['columna', 'a', 'b', 'c','d']
-df_nolin.to_csv('ajuste_cubico_y_calv1.csv', index=False)
+df_nolin.columns = ['Columna', 'a', 'b', 'c','d']
+df_nolin.to_csv(r'Calibración\Datos_ajuste\ajuste_cubico_y_calv1_0107.csv', index=False)
 
 # Coeficientes del ajuste lineal: x = m*y + b; dónde y, x en px
 columnas_lin = [[numero,m,b]  for numero, m, b in ajustes_lineal_y]
 df_lin = pd.DataFrame(columnas_lin)
-df_lin.columns = ['columna', 'm', 'b']
-df_lin.to_csv('ajuste_lin_y_calv1.csv', index=False)
+df_lin.columns = ['Columna', 'm', 'b']
+df_lin.to_csv(r'Calibración\Datos_ajuste\ajuste_lin_y_calv1_0107.csv', index=False)

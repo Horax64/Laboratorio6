@@ -76,19 +76,19 @@ print(f'Largo de tiempos_corte: {len(data["Tiempos_corte"])}')
 import pandas as pd
 import matplotlib.pyplot as plt
 
-datos_ajuste_x = pd.read_csv(r'C:\Users\LEC\Desktop\Laboratorio6\ajuste_lin_x_calv1_3006.csv')
+datos_ajuste_x = pd.read_csv(r'C:\Users\LEC\Desktop\Laboratorio6\ajuste_lin_y_calv1_3006.csv')
 datos_ajuste_x = datos_ajuste_x[5:]
 
-plt.scatter(datos_ajuste_x['Fila'],datos_ajuste_x['m'])
+plt.scatter(datos_ajuste_x['Columna'],datos_ajuste_x['m'])
 plt.show()
 # %%
 '''Visualización rápida parámetros de ajuste'''
 import pandas as pd
 import matplotlib.pyplot as plt
 
-datos_ajuste_x = pd.read_csv(r'C:\Users\LEC\Desktop\Laboratorio6\ajuste_cubico_x_calv1_3006.csv')
+datos_ajuste_x = pd.read_csv(r'C:\Users\LEC\Desktop\Laboratorio6\ajuste_cubico_y_calv1_3006.csv')
 datos_ajuste_x = datos_ajuste_x[5:]
 
-plt.scatter(datos_ajuste_x['Fila'],datos_ajuste_x['c'])
+plt.scatter(datos_ajuste_x['Columna'],datos_ajuste_x['b'])
 plt.show()
 # %%

@@ -9,17 +9,20 @@ np.set_printoptions(suppress=True)
 # 1. CARGA Y DEFINICIÓN DEL MODELO DIRECTO
 # ---------------------------------------------------------
 
-promedio_cross_x = pd.read_csv(r'Calibración\Datos_ajuste\ajuste_lin_x_calv1_3006.csv')
-promedio_cross_y = pd.read_csv(r'Calibración\Datos_ajuste\ajuste_lin_y_calv1_3006.csv')
-promedio_cross_x = promedio_cross_x[5:] #Los primeros datos son outliers
+fecha = '0107'
+
+promedio_cross_x = pd.read_csv(fr'Calibración\Datos_ajuste\ajuste_lin_x_calv1_{fecha}.csv')
+promedio_cross_y = pd.read_csv(fr'Calibración\Datos_ajuste\ajuste_lin_y_calv1_{fecha}.csv')
+#promedio_cross_x = promedio_cross_x[5:] #Los primeros datos son outliers
 
 promedio_cross_x = [promedio_cross_x['m'].mean(), 0]
-promedio_cross_y = [promedio_cross_y['m'], 0]
+promedio_cross_y = [promedio_cross_y['m'].mean(), 0]
 
 # Intenta leer tus datos de ajuste. 
 # Al usar poly1d, si las columnas de promedio_x tienen 4 elementos, arma grado 3 solo.
-datos_ajuste_x = pd.read_csv(r'Calibración\Datos_ajuste\ajuste_cubico_x_calv1_3006.csv') 
-datos_ajuste_y = pd.read_csv(r'Calibración\Datos_ajuste\ajuste_cubico_y_calv1_3006.csv')
+datos_ajuste_x = pd.read_csv(fr'Calibración\Datos_ajuste\ajuste_cubico_x_calv1_{fecha}.csv') 
+datos_ajuste_y = pd.read_csv(fr'Calibración\Datos_ajuste\ajuste_cubico_y_calv1_{fecha}.csv')
+#datos_ajuste_y = datos_ajuste_y[:-1] #El ultimo valore parece un outlier
 
 promedio_x = datos_ajuste_x.mean()[1::]
 coefs_x = [coef for coef in promedio_x] 
@@ -46,19 +49,19 @@ d_polinomio_y = np.polyder(polinomio_y)
 def NewtonRaphsonIndividual(dc_x_guess, dc_y_guess, X, Y):
     Px = polinomio_x(dc_x_guess)
     Py = polinomio_y(dc_y_guess)
-    
-    # Tu cambio: perfecto
-    F_x = Px + cross_x(Py) - X
-    F_y = Py + cross_y(Px) - Y
+
+    F_x = Px + cross_y(Py) - X
+    F_y = Py + cross_x(Px) - Y
 
     dPx = d_polinomio_x(dc_x_guess)
     dPy = d_polinomio_y(dc_y_guess)
 
     dFxdx = dPx
-    # ACÁ ESTABA EL ERROR: Faltaba el signo menos para que coincida con F_x
-    dFxdy = promedio_cross_x[0] * dPy       
-    dFydx = promedio_cross_y[0] * dPx       
     dFydy = dPy
+
+    dFxdy = promedio_cross_y[0] * dPy
+    dFydx = promedio_cross_x[0] * dPx
+
 
     det_J = dFxdx * dFydy - dFxdy * dFydx
     
@@ -100,10 +103,10 @@ def IteracionesNR(n, dc_x_guess, dc_y_guess, X, Y, tol=1e-6):
 def desplazamientos(dcx_inicial, dcy_inicial, dcx_final, dcy_final, paso_x, paso_y):
     
     # 1. Cinemática Directa
-    inicio_x = polinomio_x(dcx_inicial) + cross_x(polinomio_y(dcy_inicial))
-    inicio_y = polinomio_y(dcy_inicial) + cross_y(polinomio_x(dcx_inicial))
-    fin_x = polinomio_x(dcx_final) + cross_x(polinomio_y(dcy_final))
-    fin_y = polinomio_y(dcy_final) + cross_y(polinomio_x(dcx_final))
+    inicio_x = polinomio_x(dcx_inicial) + cross_y(polinomio_y(dcy_inicial))
+    inicio_y = polinomio_y(dcy_inicial) + cross_x(polinomio_x(dcx_inicial))
+    fin_x = polinomio_x(dcx_final) + cross_y(polinomio_y(dcy_final))
+    fin_y = polinomio_y(dcy_final) + cross_x(polinomio_x(dcx_final))
 
     
     # Imprimimos los límites físicos para debuguear y que veas por qué daba vacío
@@ -182,10 +185,10 @@ def recortar_bordes(dcx, dcy, desp_x, desp_y, n,m):
 # 3. EJECUCIÓN Y VALIDACIÓN (TEST)
 # ---------------------------------------------------------
 
-PASO_MICRONES_X = 0.5
-PASO_MICRONES_Y = 0.5
-PUNTOS_A_RECORTAR_X = 3
-PUNTOS_A_RECORTAR_Y = 2  # Acá definís cuántos puntos volás de cada borde
+PASO_MICRONES_X = 0.05
+PASO_MICRONES_Y = 0.1
+PUNTOS_A_RECORTAR_X = 20
+PUNTOS_A_RECORTAR_Y = 11  # Acá definís cuántos puntos volás de cada borde
 
 
 # 1. Calculamos la grilla completa
@@ -209,8 +212,8 @@ for idx in range(len(dcx_calc)):
     y_val = dcy_calc[idx]
     
     # ACÁ: Mismo cambio, respetar el modelo físico
-    X_fisico = polinomio_x(x_val) + cross_x(polinomio_y(y_val))
-    Y_fisico = polinomio_y(y_val) + cross_y(polinomio_x(x_val))
+    X_fisico = polinomio_x(x_val) + cross_y(polinomio_y(y_val))
+    Y_fisico = polinomio_y(y_val) + cross_x(polinomio_x(x_val))
     
     x_verificacion.append(X_fisico)
     y_verificacion.append(Y_fisico)
@@ -245,5 +248,5 @@ dutys_csv = pd.DataFrame({'Dcx': dcx_calc,'Dcy':dcy_calc})
 hora = time.strftime("%d%m_%H%M")
 print(type(hora))
 
-dutys_csv.to_csv(fr'dutys_barrido_discreto_x_{hora}.csv')
+dutys_csv.to_csv(fr'dutys_scanning_xy_{hora}.csv')
 

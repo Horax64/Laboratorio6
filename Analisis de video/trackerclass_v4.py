@@ -117,9 +117,80 @@ class tracker:
         obs = frame_proc[y-hv:y+hv, x-wv:x+wv]
         
         return template, obs
-        
+
     @staticmethod
-    def corr(path, template, obs, centro, tiempo, duracion, canal, limite_salto=70, max_predicciones=12):
+    def relocalizar(path, template, ancho_v, posicion_predicha, frame_destino,
+                     canal=0, umbral_confianza=0.55, factor_busqueda=2.5, intentos_extra=2):
+        """
+        Relocaliza automáticamente la partícula tras un salto de fila/columna,
+        SIN selección manual de ROI.
+
+        Asume que el salto es geométricamente predecible: se busca la partícula
+        alrededor de 'posicion_predicha', usando el último template válido.
+        Si no la encuentra, agranda progresivamente la ventana de búsqueda
+        (hasta 'intentos_extra' veces) por si la predicción no es exacta.
+
+        Parámetros
+        ----------
+        template          : recorte (numpy array) de la última partícula trackeada con éxito.
+        ancho_v           : [w, h] semiancho/semialto de la ventana de búsqueda base (la misma
+                             escala que 'ancho_busqueda' usado en tracker.inicio).
+        posicion_predicha : [x, y] posición donde se espera que reaparezca la partícula.
+                             La calcula quien llama a esta función, según la geometría del
+                             escaneo (p.ej. X fijo de inicio de fila + Y con paso incremental,
+                             o zigzag, etc.).
+        frame_destino     : número de frame en el que se intenta relocalizar (normalmente
+                             unos frames después del salto detectado, para dar tiempo a que
+                             la partícula se estabilice en la nueva línea).
+        factor_busqueda   : cuánto se agranda la ventana respecto a 'ancho_v' en el primer
+                             intento (compensa que la predicción no sea perfectamente exacta).
+
+        Devuelve
+        --------
+        (x, y, exito) -> exito=True si se encontró la partícula con confianza suficiente.
+        """
+        cap = cv.VideoCapture(path)
+        cap.set(cv.CAP_PROP_POS_FRAMES, frame_destino)
+        ret, frame = cap.read()
+        cap.release()
+
+        if not ret:
+            return None, None, False
+
+        filt_frame = frame[:, :, canal]
+        h_t, w_t = [int(i / 2) for i in template.shape]
+
+        x_pred = int(posicion_predicha[0])
+        y_pred = int(posicion_predicha[1])
+
+        # Probamos con ventanas de búsqueda cada vez más grandes por si el
+        # offset conocido no es perfectamente exacto para este tramo.
+        for intento in range(intentos_extra + 1):
+            escala = factor_busqueda + intento  # 2.5, 3.5, 4.5, ...
+            w_v_half = max(int(ancho_v[0] * escala), w_t + 2)
+            h_v_half = max(int(ancho_v[1] * escala), h_t + 2)
+
+            y_min, y_max = max(0, y_pred - h_v_half), min(filt_frame.shape[0], y_pred + h_v_half)
+            x_min, x_max = max(0, x_pred - w_v_half), min(filt_frame.shape[1], x_pred + w_v_half)
+            A = filt_frame[y_min:y_max, x_min:x_max]
+
+            if A.shape[0] <= template.shape[0] or A.shape[1] <= template.shape[1]:
+                continue
+
+            res = cv.matchTemplate(A, template, cv.TM_CCOEFF_NORMED)
+            _, max_val, _, max_loc_raw = cv.minMaxLoc(res)
+
+            if max_val > umbral_confianza:
+                x_sub, y_sub = interpolacion_subpixel(res, max_loc_raw[1], max_loc_raw[0])
+                x_real = x_min + x_sub + w_t
+                y_real = y_min + y_sub + h_t
+                return int(x_real), int(y_real), True
+
+        return None, None, False
+
+    @staticmethod
+    def corr(path, template, obs, centro, tiempo, duracion, canal, limite_salto=70, max_predicciones=12,
+              mostrar_video=True):
         cap = cv.VideoCapture(path) 
         cap.set(cv.CAP_PROP_POS_FRAMES, duracion[0])   
         
@@ -192,22 +263,23 @@ class tracker:
             x_vec.append(x_real)
             y_vec.append(y_real)
 
-            # --- VISUALIZACIÓN ---
-            img_disp = frame.copy()
-            cv.rectangle(img_disp, (x_min, y_min), (x_max, y_max), (255, 255, 0), 1)
-            cv.rectangle(img_disp, (int(x_real-w_t), int(y_real-h_t)), 
-                         (int(x_real+w_t), int(y_real+h_t)), color_box, 2)
-            
-            if estado == "TRACKING":
-                cv.arrowedLine(img_disp, (int(x_real), int(y_real)), 
-                               (int(x_real + vx*10), int(y_real + vy*10)), (255, 255, 0), 2)
+            # --- VISUALIZACIÓN (opcional, desactivable para ganar velocidad) ---
+            if mostrar_video:
+                img_disp = frame.copy()
+                cv.rectangle(img_disp, (x_min, y_min), (x_max, y_max), (255, 255, 0), 1)
+                cv.rectangle(img_disp, (int(x_real-w_t), int(y_real-h_t)), 
+                             (int(x_real+w_t), int(y_real+h_t)), color_box, 2)
+                
+                if estado == "TRACKING":
+                    cv.arrowedLine(img_disp, (int(x_real), int(y_real)), 
+                                   (int(x_real + vx*10), int(y_real + vy*10)), (255, 255, 0), 2)
 
-            cv.putText(img_disp, f"Estado: {estado}", (20, 30), 1, 1.2, color_box, 2)
-            cv.imshow("Tracker Predictivo - LEC", img_disp)
-            if cv.waitKey(tiempo) & 0xFF == ord("q"): 
-                cap.release()
-                cv.destroyAllWindows()
-                return x_vec, y_vec, duracion[0] + frame_idx, False
+                cv.putText(img_disp, f"Estado: {estado}", (20, 30), 1, 1.2, color_box, 2)
+                cv.imshow("Tracker Predictivo - LEC", img_disp)
+                if cv.waitKey(tiempo) & 0xFF == ord("q"): 
+                    cap.release()
+                    cv.destroyAllWindows()
+                    return x_vec, y_vec, duracion[0] + frame_idx, False
         
         cap.release()
         cv.destroyAllWindows()

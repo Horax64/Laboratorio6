@@ -2,13 +2,23 @@ import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import pandas as pd 
+from tkinter import filedialog
+from pathlib import Path
+
 
 #%%
-file = 'Calibracion_y_0107'
-trayectorias_path = fr'C:\Users\LEC\Desktop\Laboratorio6\Analisis de video\Datos_tray\Datos_crudos\{file}.csv'
-data = pd.read_csv(trayectorias_path)
-dc_y = range(0,65535,3276)
-dc_x = range(0,65535,3276)
+ruta_archivo = Path(filedialog.askopenfilename(
+    title="Abrir video a trackear",
+    defaultextension=".csv",
+    initialdir=Path.home(),        
+    filetypes=[("CSV","*.csv*"),("All files", "*.*")]
+))
+
+if not ruta_archivo:
+    print("No se seleccionó ningún archivo. Saliendo.")
+    exit()
+
+data = pd.read_csv(ruta_archivo)
 
 #Me doy cuenta que por la estructura de los datos es más fácil seprar por columnas usando el salto en x que por tiempos
 i=0
@@ -79,6 +89,7 @@ plt.show()
 # plt.show()
 #%%
 #Por ahora parece estar funcionando de forma más que adecuada, vamos a guardar los datos
-data.to_csv(rf'C:\Users\LEC\Desktop\Laboratorio6\Analisis de video\Datos_tray\Datos_procesados\{file}_proc.csv', index=False)  
-
+ruta_guardado = str(ruta_archivo).replace('.csv','') + '_proc.csv'
+data.to_csv(ruta_guardado, index=False)  
+print(f'Archivo guardado en {ruta_guardado}')
 # %%

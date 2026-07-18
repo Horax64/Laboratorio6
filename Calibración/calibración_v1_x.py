@@ -8,6 +8,8 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import pandas as pd 
 import warnings
+from tkinter import filedialog
+from pathlib import Path
 
 # Forzar a Python a lanzar un error al fallar el ajuste
 warnings.filterwarnings('error', category=np.exceptions.RankWarning)
@@ -18,14 +20,23 @@ umppx = 0.025239
 #-------------------------------------------------------
 #  Configuración de rutas y visualización de una fila.
 #-------------------------------------------------------
-fecha = '0107'
+ruta_archivo = Path(filedialog.askopenfilename(
+    title="Abrir video a trackear",
+    defaultextension=".csv",
+    initialdir=Path.home(),        
+    filetypes=[("CSV","*.csv*"),("All files", "*.*")]
+))
 
-file = f'Calibracion_x_{fecha}'
-trayectorias_path = fr'Analisis de video\Datos_tray\Datos_procesados\{file}_proc.csv'
-data = pd.read_csv(trayectorias_path)
+if not ruta_archivo:
+    print("No se seleccionó ningún archivo. Saliendo.")
+    exit()
+
+nombre_archivo = ruta_archivo.stem
+
+data = pd.read_csv(ruta_archivo)
+
 filas = data['fila'].unique()
 fila = 3
-
 x_1 = data[data['fila']==filas[fila]]['X']
 y_1 = data[data['fila']==filas[fila]]['Y']
 
@@ -187,12 +198,16 @@ filas_nolin = [[numero] + list(array) for numero, array in ajustes_nolineal_x]
 # Coeficientes del polinomio: dc_x = a*x^3 + b*x^2 + c*x +d; dónde dc_x norm. y, x en um
 df_nolin = pd.DataFrame(filas_nolin)
 df_nolin.columns = ['Fila', 'a', 'b', 'c','d']
-df_nolin.to_csv(r'Calibración\Datos_ajuste\ajuste_cubico_x_calv1_0107.csv', index=False)
+
+ruta_guardado = 'Calibración\\Datos_ajuste\\' + str(nombre_archivo).replace('_proc', '') + '_ajuste_cubico_x' + '.csv'
+df_nolin.to_csv(ruta_guardado, index=False)
 
 # Coeficientes del ajuste lineal: y = m*x + b; dónde x, y en px
 filas_lin = [[numero,m,b]  for numero, m, b in ajustes_lineal_x]
 df_lin = pd.DataFrame(filas_lin)
 df_lin.columns = ['Fila', 'm', 'b']
-df_lin.to_csv(r'Calibración\Datos_ajuste\ajuste_lin_x_calv1_0107.csv', index=False)
+
+ruta_guardado = 'Calibración\Datos_ajuste\\' + str(nombre_archivo).replace('_proc', '') + '_ajuste_lin_x' + '.csv'
+df_lin.to_csv(ruta_guardado, index=False)
 
 # %%

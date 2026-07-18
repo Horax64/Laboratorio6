@@ -8,6 +8,8 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import pandas as pd 
 import warnings
+from tkinter import filedialog
+from pathlib import Path
 
 # Forzar a Python a lanzar un error al fallar el ajuste
 warnings.filterwarnings('error', category=np.exceptions.RankWarning)
@@ -16,11 +18,21 @@ warnings.filterwarnings('error', category=np.exceptions.RankWarning)
 umppx = 0.025239
 #%%
 """Configuración de rutas y visualización de una columna."""
-fecha ='0107'
+ruta_archivo = Path(filedialog.askopenfilename(
+    title="Abrir video a trackear",
+    defaultextension=".csv",
+    initialdir=Path.home(),        
+    filetypes=[("CSV","*.csv*"),("All files", "*.*")]
+))
 
-file = f'Calibracion_y_{fecha}'
-trayectorias_path = fr'Analisis de video\Datos_tray\Datos_procesados\{file}_proc.csv'
-data = pd.read_csv(trayectorias_path)
+if not ruta_archivo:
+    print("No se seleccionó ningún archivo. Saliendo.")
+    exit()
+
+nombre_archivo = ruta_archivo.stem
+
+data = pd.read_csv(ruta_archivo)
+
 columnas = data['columna'].unique()
 col = 3
 
@@ -184,10 +196,14 @@ columnas_nolin = [[numero] + list(array) for numero, array in ajustes_nolineal_y
 # Coeficientes del polinomio: dc_y = a*y^3 + b*y^2 + c*y +d; dónde dc_y norm. y, x en um
 df_nolin = pd.DataFrame(columnas_nolin)
 df_nolin.columns = ['Columna', 'a', 'b', 'c','d']
-df_nolin.to_csv(r'Calibración\Datos_ajuste\ajuste_cubico_y_calv1_0107.csv', index=False)
+
+ruta_guardado = 'Calibración\\Datos_ajuste\\' + str(nombre_archivo).replace('_proc', '') + '_ajuste_cubico_y' + '.csv'
+df_nolin.to_csv(ruta_guardado, index=False)
 
 # Coeficientes del ajuste lineal: x = m*y + b; dónde y, x en px
 columnas_lin = [[numero,m,b]  for numero, m, b in ajustes_lineal_y]
 df_lin = pd.DataFrame(columnas_lin)
 df_lin.columns = ['Columna', 'm', 'b']
-df_lin.to_csv(r'Calibración\Datos_ajuste\ajuste_lin_y_calv1_0107.csv', index=False)
+
+ruta_guardado = 'Calibración\Datos_ajuste\\' + str(nombre_archivo).replace('_proc', '') + '_ajuste_lin_y' + '.csv'
+df_lin.to_csv(ruta_guardado, index=False)

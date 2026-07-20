@@ -154,8 +154,8 @@ for fila in filas:
 Buscamos V_x = f(X_real) y lo ajustamos con un polinomio de grado 3.
 """
 
-cantidad_dcs =  18#Es necesario tener en claro cuales fueron los dcs para cada fila.
-                  #Asumimos que mandamos un array equiespaciado
+cantidad_dcs =  18 #Es necesario tener en claro cuales fueron los dcs para cada fila.
+                   #Asumimos que mandamos un array equiespaciado
 ajustes_nolineal_x = []
 
 for i,fila in enumerate(filas):
